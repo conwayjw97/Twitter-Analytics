@@ -13,19 +13,47 @@ access_token_secret = "P9G1QCQfgFDV55P2coN6tR2L19DbRolhm65SpVDY6C1Kr"
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
-api = tweepy.API(auth,wait_on_rate_limit=True)
 
-tweets = []
+keyword = "assange"
+
+# Gather snowden tweets with the REST API
+api = tweepy.API(auth, wait_on_rate_limit=True)
+RestTweets = []
 try:
-    print("Scraping...")
-    for tweet in api.search(q="snowden", lang="en", result_type="recent", count=1, full_text=True):
+    print("Scraping with the REST API...")
+    for tweet in api.search(q=keyword, lang="en", result_type="recent", count=1, full_text=True):
         print("Tweet by %s at %s: %s" % (tweet.id, tweet.created_at, tweet.text))
-        # tweets.append((tweet.created_at,tweet.id,tweet.text))
+        RestTweets.append((tweet.created_at,tweet.id,tweet.text))
 except BaseException as e:
     print('failed on_status,',str(e))
-    time.sleep(3)
+    # time.sleep(3)
 
-# print(tweets)
+# Gather snowden tweets with Streaming
+class MyStreamListener(tweepy.StreamListener):
+    def __init__(self):
+        self.api = tweepy.API()
+        self.tweet_count = 0
+        self.tweets = []
+
+    def on_status(self, status):
+        # Try to get the extended tweet if it's long enough
+        try:
+            tweet_text = status.extended_tweet['full_text']
+        except Exception as e:
+            tweet_text = status.text
+        print("Tweet by %s at %s: %s" % (status.id, status.created_at, tweet_text))
+        self.tweets.append((status.created_at, status.id, tweet_text))
+        self.tweet_count += 1
+
+listener = MyStreamListener()
+stream = tweepy.Stream(auth, listener)
+StreamTweets = []
+try:
+    print('Scraping with the Streaming API... \nPress Ctrl+C in order to stop execution \n')
+    stream.filter(track=[keyword], languages=["en"])
+except(KeyboardInterrupt):
+    print ('# of tweets fetched: ', listener.tweet_count)
+
 
 # client = pymongo.MongoClient("mongodb://localhost:27017/")
 #
