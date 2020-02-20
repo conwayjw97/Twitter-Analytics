@@ -6,6 +6,62 @@
 import pymongo
 import tweepy
 
+class RestCrawler():
+    def __init__(self, auth, keyword, tweet_count):
+        self.auth = auth
+        self.keyword = keyword
+        self.tweet_count = tweet_count
+
+    def scrape():
+        api = tweepy.API(auth, wait_on_rate_limit=True)
+        rest_tweets = []
+        tweet_count = 0
+        try:
+            print("Scraping with the REST API...")
+            for tweet in api.search(q=keyword, lang="en", result_type="recent", count=tweet_count, full_text=True):
+                rest_tweets.append((tweet.created_at,tweet.id,tweet.text))
+                tweet_count += 1
+        except BaseException as e:
+            print("Failed on_status,", str(e))
+
+class StreamCrawler():
+    class MyStreamListener(tweepy.StreamListener):
+        def __init__(self, time_limit):
+            self.api = tweepy.API()
+            self.tweet_count = 0
+            self.tweets = []
+            self.time_limit = time_limit
+            self.start_time = time.time()
+
+        def on_status(self, status):
+            if (time.time() - self.start_time) < self.time_limit:
+                # Try to get the extended tweet if it's long enough
+                try:
+                    tweet_text = status.extended_tweet["full_text"]
+                except Exception as e:
+                    tweet_text = status.text
+                # print("Tweet by %s at %s: %s" % (status.id, status.created_at, tweet_text))
+                self.tweets.append((status.created_at, status.id, tweet_text))
+                self.tweet_count += 1
+                return True
+            else:
+                return False
+
+    def __init__(self, auth, keyword, time_limit):
+        self.auth = auth
+        self.keyword = keyword
+        self.time_limit = time_limit
+
+    def scrape():
+        listener = MyStreamListener(time_limit)
+        stream = tweepy.Stream(self.auth, listener)
+        stream_tweets = []
+        try:
+            print("Scraping with the Streaming API... \nPress Ctrl+C in order to stop execution \n")
+            stream.filter(track=[keyword], languages=["en"])
+        except(KeyboardInterrupt):
+            print ("# of tweets fetched: ", listener.tweet_count)
+
 consumer_key = "8CRA9cjpku4BtfK1vuJ5QAPLg"
 consumer_secret = "uAGmC5CpJY5vjTom2l8AhXAtKeu3aFCm69Atxl19YXlUIvwN0F"
 access_token = "1072253339113611266-3Th0tGTF5hlAluASFHW9QmlCowQgsa"
@@ -16,44 +72,13 @@ auth.set_access_token(access_token, access_token_secret)
 
 keyword = "assange"
 
-# Gather snowden tweets with the REST API
-api = tweepy.API(auth, wait_on_rate_limit=True)
-RestTweets = []
-try:
-    print("Scraping with the REST API...")
-    for tweet in api.search(q=keyword, lang="en", result_type="recent", count=1, full_text=True):
-        print("Tweet by %s at %s: %s" % (tweet.id, tweet.created_at, tweet.text))
-        RestTweets.append((tweet.created_at,tweet.id,tweet.text))
-except BaseException as e:
-    print('failed on_status,',str(e))
-    # time.sleep(3)
+# Scrape with the REST API
+rest_crawler = RestCrawler(auth, keyword, 1000000)
+rest_crawler.scrape()
 
-# Gather snowden tweets with Streaming
-class MyStreamListener(tweepy.StreamListener):
-    def __init__(self):
-        self.api = tweepy.API()
-        self.tweet_count = 0
-        self.tweets = []
-
-    def on_status(self, status):
-        # Try to get the extended tweet if it's long enough
-        try:
-            tweet_text = status.extended_tweet['full_text']
-        except Exception as e:
-            tweet_text = status.text
-        print("Tweet by %s at %s: %s" % (status.id, status.created_at, tweet_text))
-        self.tweets.append((status.created_at, status.id, tweet_text))
-        self.tweet_count += 1
-
-listener = MyStreamListener()
-stream = tweepy.Stream(auth, listener)
-StreamTweets = []
-try:
-    print('Scraping with the Streaming API... \nPress Ctrl+C in order to stop execution \n')
-    stream.filter(track=[keyword], languages=["en"])
-except(KeyboardInterrupt):
-    print ('# of tweets fetched: ', listener.tweet_count)
-
+# Scrape with Streaming
+stream_crawler = StreamCrawler(auth, keyword, 100)
+stream_crawler.scrape()
 
 # client = pymongo.MongoClient("mongodb://localhost:27017/")
 #
