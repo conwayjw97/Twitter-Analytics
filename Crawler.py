@@ -20,8 +20,13 @@ class RestCrawler():
         try:
             print("Scraping with the REST API...")
             for tweet in api.search(q=self.keyword, lang="en", result_type="recent", count=self.scrape_max, full_text=True):
-                print("Tweet by %s at %s in %s: %s" % (tweet.id, tweet.created_at, tweet.place, tweet.text))
-                rest_tweets.append({"time":tweet.created_at,"id":tweet.id,"text":tweet.text})
+                # Try to get the extended tweet if it's long enough
+                try:
+                    tweet_text = tweet.extended_tweet["full_text"]
+                except Exception as e:
+                    tweet_text = tweet.text
+                # print("Tweet by %s at %s in %s: %s" % (tweet.user.screen_name, tweet.created_at, tweet.geo, tweet.text))
+                rest_tweets.append({"id":tweet.id,"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text})
                 # rest_tweets.append((tweet.created_at,tweet.id,tweet.text))
                 tweet_count += 1
         except BaseException as e:
@@ -44,8 +49,8 @@ class MyStreamListener(tweepy.StreamListener):
                 tweet_text = status.extended_tweet["full_text"]
             except Exception as e:
                 tweet_text = status.text
-            print("Tweet by %s at %s in %s: %s" % (status.id, status.created_at, status.place, tweet_text))
-            self.tweets.append({"time":tweet.created_at,"id":tweet.id,"text":tweet.text})
+            # print("Tweet by %s at %s in %s: %s" % (status.user.screen_name, status.created_at, status.geo, tweet_text))
+            self.tweets.append({"id":status.id,"time":status.created_at,"user":status.user.screen_name,"text":tweet_text})
             # self.tweets.append((status.created_at, status.id, tweet_text))
             self.tweet_count += 1
             return True
@@ -67,10 +72,10 @@ class StreamCrawler():
         try:
             print("Scraping with the Streaming API... \nPress Ctrl+C in order to stop streaming or wait for the", self.time_limit, "second time limit")
             stream.filter(track=[self.keyword], languages=["en"])
+        except KeyboardInterrupt:
+            pass
         except BaseException as e:
             print("Failed, on_status:", str(e))
-        except(KeyboardInterrupt):
-            pass
         print("Number of tweets fetched through streaming:", listener.tweet_count, "\n")
         return listener.get_tweets()
 
@@ -84,8 +89,8 @@ auth.set_access_token(access_token, access_token_secret)
 
 # Scraping parameters
 KEYWORD = "assange"
-REST_TWEET_MAX = 10
-STREAM_TIME_LIMIT = 10
+REST_TWEET_MAX = 10000
+STREAM_TIME_LIMIT = 100
 
 # Scrape with the REST API
 rest_crawler = RestCrawler(auth, KEYWORD, REST_TWEET_MAX)
@@ -105,15 +110,14 @@ db = client["WebScienceAssessment"]
 # if "WebScienceAssessment" in dblist:
 #   print("Your database exists.")
 
-col = db["test"]
-col.drop()
-col = db["tweets"]
+collection = db["tweets"]
 # mydict = { "name": "John", "address": "Highway 37" }
 for tweet in rest_tweets:
-    x = col.insert_one(tweet)
+    x = collection.insert_one(tweet)
     # print(x.inserted_id)
 for tweet in stream_tweets:
-    x = col.insert_one(tweet)
+    x = collection.insert_one(tweet)
     # print(x.inserted_id)
 
 print("Done.")
+print("Total number of tweets stored:", collection.count())
