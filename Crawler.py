@@ -26,7 +26,7 @@ class RestCrawler():
                 except Exception as e:
                     tweet_text = tweet.text
                 # print("Tweet by %s at %s in %s: %s" % (tweet.user.screen_name, tweet.created_at, tweet.geo, tweet.text))
-                rest_tweets.append({"id":tweet.id,"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text})
+                rest_tweets.append({"id":tweet.id,"data":{"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text}})
                 # rest_tweets.append((tweet.created_at,tweet.id,tweet.text))
                 tweet_count += 1
         except BaseException as e:
@@ -50,7 +50,7 @@ class MyStreamListener(tweepy.StreamListener):
             except Exception as e:
                 tweet_text = status.text
             # print("Tweet by %s at %s in %s: %s" % (status.user.screen_name, status.created_at, status.geo, tweet_text))
-            self.tweets.append({"id":status.id,"time":status.created_at,"user":status.user.screen_name,"text":tweet_text})
+            self.tweets.append({"id":status.id,"data":{"time":status.created_at,"user":status.user.screen_name,"text":tweet_text}})
             # self.tweets.append((status.created_at, status.id, tweet_text))
             self.tweet_count += 1
             return True
@@ -89,8 +89,8 @@ auth.set_access_token(access_token, access_token_secret)
 
 # Scraping parameters
 KEYWORD = "assange"
-REST_TWEET_MAX = 10000
-STREAM_TIME_LIMIT = 100
+REST_TWEET_MAX = 1
+STREAM_TIME_LIMIT = 1
 
 # Scrape with the REST API
 rest_crawler = RestCrawler(auth, KEYWORD, REST_TWEET_MAX)
@@ -111,13 +111,10 @@ db = client["WebScienceAssessment"]
 #   print("Your database exists.")
 
 collection = db["tweets"]
-# mydict = { "name": "John", "address": "Highway 37" }
 for tweet in rest_tweets:
-    x = collection.insert_one(tweet)
-    # print(x.inserted_id)
+    collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
 for tweet in stream_tweets:
-    x = collection.insert_one(tweet)
-    # print(x.inserted_id)
+    collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
 
 print("Done.")
 print("Total number of tweets stored:", collection.count())
