@@ -6,4 +6,5 @@ collection = db["tweets"]
 tweets = list(collection.find({}))
 
 for tweet in tweets:
-    print(tweet)
+    print("Tweet by %s at %s: %s" % (tweet["user"], tweet["time"], tweet["text"]))
+    print("------------------------------------")
