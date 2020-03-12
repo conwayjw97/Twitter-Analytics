@@ -14,33 +14,26 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 
 def parse_tweet(tweet):
-    if hasattr(tweet, "retweeted_status"):  # Check if Retweet
-        try:
-            text = tweet.retweeted_status.extended_tweet["full_text"]
-        except AttributeError:
-            text = tweet.retweeted_status.text
-    else:
-        try:
-            text = tweet.extended_tweet["full_text"]
-        except AttributeError:
-            text = tweet.text
+
     return text
 
 class RestCrawler():
-    def __init__(self, auth, power_users, scrape_max):
+    def __init__(self, auth, scrape_max):
         self.auth = auth
-        self.power_users = power_users
         self.scrape_max = scrape_max
 
-    def scrape(self):
+    def scrape(self, keyword):
         api = tweepy.API(auth, wait_on_rate_limit=True)
         rest_tweets = []
         tweet_count = 0
         try:
-            print("Scraping with the REST API...")
-            for tweet in api.search(q=self.keyword, lang="en", result_type="recent", count=self.scrape_max, full_text=True, tweet_mode="extended"):
+            print("Scraping keyword '%s' with the REST API..." % keyword)
+            for tweet in api.search(q=keyword, lang="en", result_type="recent", count=self.scrape_max, full_text=True, tweet_mode="extended"):
                 # Try to get the extended tweet if it's long enough
-                tweet_text = parse_tweet(tweet)
+                try:
+                    tweet_text = tweet.retweeted_status.full_text
+                except AttributeError:  # Not a Retweet
+                    tweet_text = tweet.full_text
                 # print("Tweet by %s at %s in %s: %s" % (tweet.user.screen_name, tweet.created_at, tweet.geo, tweet.text))
                 rest_tweets.append({"id":tweet.id,"data":{"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text}})
                 # rest_tweets.append((tweet.created_at,tweet.id,tweet.text))
@@ -61,7 +54,16 @@ class MyStreamListener(tweepy.StreamListener):
     def on_status(self, status):
         if (time.time() - self.start_time) < self.time_limit:
             # Try to get the extended tweet if it's long enough
-            tweet_text = parse_tweet(status)
+            if hasattr(status, "retweeted_status"):  # Check if Retweet
+                try:
+                    tweet_text = status.retweeted_status.extended_tweet["full_text"]
+                except AttributeError:
+                    tweet_text = status.retweeted_status.text
+            else:
+                try:
+                    tweet_text = status.extended_tweet["full_text"]
+                except AttributeError:
+                    tweet_text = status.text
             # print("Tweet by %s at %s in %s: %s" % (status.user.screen_name, status.created_at, status.geo, tweet_text))
             self.tweets.append({"id":status.id,"data":{"time":status.created_at,"user":status.user.screen_name,"text":tweet_text}})
             # self.tweets.append((status.created_at, status.id, tweet_text))
@@ -74,17 +76,15 @@ class MyStreamListener(tweepy.StreamListener):
         return self.tweets
 
 class StreamCrawler():
-    def __init__(self, auth, keyword, time_limit):
+    def __init__(self, auth, time_limit):
         self.auth = auth
-        self.keyword = keyword
         self.time_limit = time_limit
 
     def scrape(self):
         listener = MyStreamListener(self.time_limit)
-        stream = tweepy.Stream(self.auth, listener)
+        stream = tweepy.Stream(self.auth, listener, tweet_mode="extended")
         try:
             print("Scraping with the Streaming API... \nPress Ctrl+C in order to stop streaming or wait for the", self.time_limit, "second time limit")
-            # stream.filter(track=[self.keyword], languages=["en"])
             stream.sample(languages=["en"])
         except KeyboardInterrupt:
             pass
@@ -128,44 +128,32 @@ def print_tweets(tweets):
         tweet = tweet["data"]
         print("Tweet by %s at %s: %s" % (tweet["user"], tweet["time"], tweet["text"]))
 
-def display_topics(model, feature_names, no_top_words):
-    for topic_idx, topic in enumerate(model.components_):
-        print("Topic %d:" % (topic_idx))
-        # print(" ".join([feature_names[i] for i in topic.argsort()[:-no_top_words - 1:-1]]))
-        indexing = topic.argsort()[:-no_top_words - 1:-1]
-        print(indexing)
-        print(feature_names)
-        print(feature_names[indexing[0]])
-        print(feature_names[indexing[1]])
-        print(feature_names[indexing[2]])
-
-def find_topics(tweets):
-    print("Extracting topics.")
+def find_keywords(no_keywords, tweets):
+    print("Extracting keywords.")
 
     tweet_text = []
     for tweet in tweets:
         tweet_text.append(tweet["data"]["text"])
 
-    # LDA can only use raw term counts for LDA because it is a probabilistic graphical model
-    tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=1000, stop_words='english')
-    tf = tf_vectorizer.fit_transform(tweet_text)
-    tf_feature_names = tf_vectorizer.get_feature_names()
+    tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=1000, stop_words='english')
+    tfidf = tfidf_vectorizer.fit_transform(tweet_text)
+    tfidf_feature_names = tfidf_vectorizer.get_feature_names()
 
-    no_topics = 20
+    nmf = NMF(n_components=no_keywords, random_state=1, alpha=.1, l1_ratio=.5, init='nndsvd').fit(tfidf)
 
-    # Run LDA
-    lda = LatentDirichletAllocation(n_components=no_topics, max_iter=5, learning_method='online', learning_offset=50.,random_state=0).fit(tf)
-
-    no_top_words = 5
-    display_topics(lda, tf_feature_names, no_top_words)
+    keywords = []
+    for topic_idx, topic in enumerate(nmf.components_):
+        keywords.append(tfidf_feature_names[topic.argsort()[:-1 - 1:-1][0]])
+        
+    return keywords
 
 if(len(sys.argv) - 1 < 2):
-    print("Please run this program with arguments: Crawler.py <REST_Tweets> <Stream_Time>")
+    print("Please run this program with arguments: Crawler.py <No_Keywords> <Stream_Time> <Max_REST_Tweets>")
 else:
     # Scraping parameters
-    KEYWORD = "Coronavirus"
-    REST_TWEET_MAX = int(sys.argv[1])
+    NO_KEYWORDS = int(sys.argv[1])
     STREAM_TIME_LIMIT = int(sys.argv[2])
+    REST_TWEET_MAX = int(sys.argv[3])
 
     # Set keys and configure Twitter app authorisation
     consumer_key = "8CRA9cjpku4BtfK1vuJ5QAPLg"
@@ -176,29 +164,29 @@ else:
     auth.set_access_token(access_token, access_token_secret)
 
     # Scrape with Streaming
-    stream_crawler = StreamCrawler(auth, KEYWORD, STREAM_TIME_LIMIT)
+    stream_crawler = StreamCrawler(auth, STREAM_TIME_LIMIT)
     stream_tweets = stream_crawler.scrape()
     stream_tweets = clean_up_tweets(stream_tweets)
-    find_topics(stream_tweets)
+    keywords = find_keywords(NO_KEYWORDS, stream_tweets)
 
+    # Scrape with the REST API
+    rest_tweets = []
+    for keyword in keywords:
+        rest_crawler = RestCrawler(auth, REST_TWEET_MAX)
+        rest_tweets += rest_crawler.scrape(keyword)
 
-    # power_users = find_power_users(stream_tweets)
-    #
-    # # Scrape with the REST API
-    # rest_crawler = RestCrawler(auth, power_users, KEYWORD, REST_TWEET_MAX)
-    # rest_tweets = rest_crawler.scrape()
-    # print(rest_tweets)
-    #
-    # # Save tweets to MongoDB
-    # print("Saving scraped tweets to MongoDB...\n")
-    # client = pymongo.MongoClient("mongodb://localhost:27017/")
-    # db = client["WebScienceAssessment"]
-    #
-    # collection = db["tweets"]
-    # for tweet in rest_tweets:
-    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-    # for tweet in stream_tweets:
-    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-    #
-    # print("Done.")
-    # print("Total number of tweets stored:", collection.count())
+    # Save tweets to MongoDB
+    print("Saving scraped tweets to MongoDB...\n")
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client["WebScienceAssessment"]
+
+    collection = db["tweets"]
+    for tweet in rest_tweets:
+        # print(tweet)
+        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+    for tweet in stream_tweets:
+        # print(tweet)
+        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+
+    print("Done.")
+    print("Total number of tweets stored:", collection.count())
