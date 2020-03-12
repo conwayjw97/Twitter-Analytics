@@ -12,10 +12,6 @@ import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 
-def parse_tweet(tweet):
-
-    return text
-
 class RestCrawler():
     def __init__(self, auth, scrape_max):
         self.auth = auth
@@ -33,9 +29,7 @@ class RestCrawler():
                     tweet_text = tweet.retweeted_status.full_text
                 except AttributeError:  # Not a Retweet
                     tweet_text = tweet.full_text
-                # print("Tweet by %s at %s in %s: %s" % (tweet.user.screen_name, tweet.created_at, tweet.geo, tweet.text))
                 rest_tweets.append({"id":tweet.id,"data":{"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text}})
-                # rest_tweets.append((tweet.created_at,tweet.id,tweet.text))
                 tweet_count += 1
         except BaseException as e:
             print("Failed, on_status:", str(e))
@@ -63,9 +57,7 @@ class MyStreamListener(tweepy.StreamListener):
                     tweet_text = status.extended_tweet["full_text"]
                 except AttributeError:
                     tweet_text = status.text
-            # print("Tweet by %s at %s in %s: %s" % (status.user.screen_name, status.created_at, status.geo, tweet_text))
             self.tweets.append({"id":status.id,"data":{"time":status.created_at,"user":status.user.screen_name,"text":tweet_text}})
-            # self.tweets.append((status.created_at, status.id, tweet_text))
             self.tweet_count += 1
             return True
         else:
@@ -75,8 +67,9 @@ class MyStreamListener(tweepy.StreamListener):
         return self.tweets
 
 class StreamCrawler():
-    def __init__(self, auth, time_limit):
+    def __init__(self, auth, keywords, time_limit):
         self.auth = auth
+        self.keywords = keywords
         self.time_limit = time_limit
 
     def scrape(self):
@@ -84,7 +77,7 @@ class StreamCrawler():
         stream = tweepy.Stream(self.auth, listener, tweet_mode="extended")
         try:
             print("Scraping with the Streaming API... \nPress Ctrl+C in order to stop streaming or wait for the", self.time_limit, "second time limit")
-            stream.sample(languages=["en"])
+            stream.filter(track=self.keywords, languages=["en"])
         except KeyboardInterrupt:
             pass
         except BaseException as e:
@@ -92,7 +85,7 @@ class StreamCrawler():
         print("Number of tweets fetched through streaming:", listener.tweet_count, "\n")
         return listener.get_tweets()
 
-def find_power_users(tweets):
+def find_power_users(tweets, no_users):
     power_users = {}
     for tweet in tweets:
         tweet = tweet["data"]
@@ -102,11 +95,11 @@ def find_power_users(tweets):
             power_users[tweet["user"]] = 1
 
     sorted_power_users = sorted(power_users, key=power_users.get, reverse=True)
-    print("\n5 users with the most tweets:")
-    for i in range(5):
+    print("\n%d users with the most tweets:" % no_users)
+    for i in range(no_users):
         print("%s with %d tweets." % (sorted_power_users[i], power_users[sorted_power_users[i]]))
 
-    return(sorted_power_users)
+    return(sorted_power_users[:no_users])
 
 def clean_up_tweets(tweets):
     print("Cleaning up tweets.")
@@ -131,30 +124,24 @@ def print_tweets(tweets):
         tweet = tweet["data"]
         print("Tweet by %s at %s: %s" % (tweet["user"], tweet["time"], tweet["text"]))
 
-def find_keywords(no_keywords, tweets):
-    print("Extracting keywords.")
+def scrape_trends(auth):
+    api = tweepy.API(auth)
 
-    tweet_text = []
-    for tweet in tweets:
-        tweet_text.append(tweet["data"]["text"])
+    # WOE ID for UK is 12723
+    # WOE ID for US is 2352824
+    trends = api.trends_place(2352824)[0]["trends"]
 
-    tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=1000, stop_words='english')
-    tfidf = tfidf_vectorizer.fit_transform(tweet_text)
-    tfidf_feature_names = tfidf_vectorizer.get_feature_names()
+    trend_keywords = []
+    for trend in trends:
+        trend_keywords.append(trend["name"])
 
-    nmf = NMF(n_components=no_keywords, random_state=1, alpha=.1, l1_ratio=.5, init='nndsvd').fit(tfidf)
-
-    keywords = []
-    for topic_idx, topic in enumerate(nmf.components_):
-        keywords.append(tfidf_feature_names[topic.argsort()[:-1 - 1:-1][0]])
-
-    return keywords
+    return trend_keywords
 
 if(len(sys.argv) - 1 < 2):
-    print("Please run this program with arguments: Crawler.py <No_Keywords> <Stream_Time> <Max_REST_Tweets>")
+    print("Please run this program with arguments: Crawler.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets>")
 else:
     # Scraping parameters
-    NO_KEYWORDS = int(sys.argv[1])
+    NO_POWER_USERS = int(sys.argv[1])
     STREAM_TIME_LIMIT = int(sys.argv[2])
     REST_TWEET_MAX = int(sys.argv[3])
 
@@ -166,29 +153,30 @@ else:
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
-    # Scrape with Streaming
-    stream_crawler = StreamCrawler(auth, STREAM_TIME_LIMIT)
-    stream_tweets = stream_crawler.scrape()
-    stream_tweets = clean_up_tweets(stream_tweets)
-    keywords = find_keywords(NO_KEYWORDS, stream_tweets)
+    # Find trending words
+    trend_keywords = scrape_trends(auth)
+
+    # Scrape with Streaming filtering by trending words
+    stream_crawler = StreamCrawler(auth, trend_keywords, STREAM_TIME_LIMIT)
+    stream_tweets = clean_up_tweets(stream_crawler.scrape())
+
+    # Find power users
+    power_users = find_power_users(stream_tweets, NO_POWER_USERS)
 
     # Scrape with the REST API
+    rest_crawler = RestCrawler(auth, REST_TWEET_MAX)
     rest_tweets = []
-    for keyword in keywords:
-        rest_crawler = RestCrawler(auth, REST_TWEET_MAX)
-        rest_tweets += rest_crawler.scrape(keyword)
+    for user in power_users:
+        rest_tweets += clean_up_tweets(rest_crawler.scrape(user))
 
     # Save tweets to MongoDB
     print("Saving scraped tweets to MongoDB...\n")
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["WebScienceAssessment"]
-
     collection = db["tweets"]
     for tweet in rest_tweets:
-        # print(tweet)
         collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
     for tweet in stream_tweets:
-        # print(tweet)
         collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
 
     print("Done.")
