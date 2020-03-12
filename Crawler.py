@@ -9,9 +9,8 @@ import time
 import sys
 import re
 
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.datasets import fetch_20newsgroups
-from sklearn.decomposition import NMF, LatentDirichletAllocation
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import NMF
 
 def parse_tweet(tweet):
 
@@ -116,6 +115,10 @@ def clean_up_tweets(tweets):
         tweet = tweets[i]["data"]
         # Remove URLs
         tweet["text"] = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', tweet["text"], flags=re.MULTILINE)
+        # Remove new lines
+        tweet["text"] = re.sub(r'/\r?\n|\r/', '', tweet["text"], flags=re.MULTILINE)
+        # Remove broken symbols
+        tweet["text"] = re.sub(r'&amp;', '', tweet["text"], flags=re.MULTILINE)
         # Remove very short tweets
         if(len(tweet["text"]) < 10):
             tweets_to_remove.append(tweets[i])
@@ -144,7 +147,7 @@ def find_keywords(no_keywords, tweets):
     keywords = []
     for topic_idx, topic in enumerate(nmf.components_):
         keywords.append(tfidf_feature_names[topic.argsort()[:-1 - 1:-1][0]])
-        
+
     return keywords
 
 if(len(sys.argv) - 1 < 2):

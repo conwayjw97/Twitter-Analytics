@@ -1,111 +1,51 @@
 import pymongo
 import tweepy
+
 from textblob import TextBlob
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.metrics import adjusted_rand_score
 
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["WebScienceAssessment"]
 collection = db["tweets"]
-
-# Calculate tweet sentiment and update database entry with grouping
 tweets = list(collection.find({}))
-positive_count = neutral_count = negative_count = 0
+
+# Clusterise tweets
+no_clusters = 10
+
+tweet_text = []
+for tweet in tweets:
+    tweet_text.append(tweet["text"])
+
+vectorizer = TfidfVectorizer(stop_words='english')
+X = vectorizer.fit_transform(tweet_text)
+
+model = KMeans(n_clusters=no_clusters, init='k-means++', max_iter=100, n_init=1)
+model.fit(X)
+
+print("Top terms per cluster:")
+order_centroids = model.cluster_centers_.argsort()[:, ::-1]
+terms = vectorizer.get_feature_names()
+for i in range(no_clusters):
+    print ("Cluster %d:" % i)
+    for ind in order_centroids[i, :10]:
+        print(' %s' % terms[ind])
+    print()
+
+# Update database entry with clustering
+tweets = list(collection.find({}))
+clustering_count = {}
 for tweet in tweets:
     if("sentiment" not in tweet):
         update_query = {"id":tweet["id"]}
+        cluster = model.predict(vectorizer.transform([tweet["text"]]))[0]
+        if(cluster in clustering_count):
+            clustering_count[cluster] += 1
+        else:
+            clustering_count[cluster] = 1
+        new_cluster = {"$set":{"clustter":int(cluster)}}
+        collection.update_one(update_query, new_cluster)
 
-        if(TextBlob(tweet["text"]).sentiment.polarity < 0):
-            new_group = {"$set":{"sentiment":"negative"}}
-            negative_count += 1
-        elif(TextBlob(tweet["text"]).sentiment.polarity == 0):
-            new_group = {"$set":{"sentiment":"neutral"}}
-            neutral_count += 1
-        elif(TextBlob(tweet["text"]).sentiment.polarity > 0):
-            new_group = {"$set":{"sentiment":"positive"}}
-            positive_count += 1
-
-        collection.update_one(update_query, new_group)
-
-print("New Negative tweets:", negative_count)
-print("New Neutral tweets:", neutral_count)
-print("New Positive tweets:", positive_count)
-
-# Extract most common usernames and hashtags from each sentiment group
-positive_tweets = list(collection.find({"sentiment":"positive"}))
-positive_users = {}
-positive_hashtags = {}
-for tweet in positive_tweets:
-    if(tweet["user"] in positive_users):
-        positive_users[tweet["user"]] += 1
-    else:
-        positive_users[tweet["user"]] = 1
-
-    hashtags = [word for word in tweet["text"].replace(',','').split() if word[0] == '#']
-    if(len(hashtags) > 0):
-        for hashtag in hashtags:
-            if(hashtag in positive_hashtags):
-                positive_hashtags[hashtag] += 1
-            else:
-                positive_hashtags[hashtag] = 1
-
-sorted_positive_users = sorted(positive_users, key=positive_users.get, reverse=True)
-sorted_positive_hashtags = sorted(positive_hashtags, key=positive_hashtags.get, reverse=True)
-print("\n5 users with the most positive tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_positive_users[i], positive_users[sorted_positive_users[i]]))
-print("\n5 most popular hashtags in the positive tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_positive_hashtags[i], positive_hashtags[sorted_positive_hashtags[i]]))
-
-
-neutral_tweets = list(collection.find({"sentiment":"neutral"}))
-neutral_users = {}
-neutral_hashtags = {}
-for tweet in neutral_tweets:
-    if(tweet["user"] in neutral_users):
-        neutral_users[tweet["user"]] += 1
-    else:
-        neutral_users[tweet["user"]] = 1
-
-    hashtags = [word for word in tweet["text"].replace(',','').split() if word[0] == '#']
-    if(len(hashtags) > 0):
-        for hashtag in hashtags:
-            if(hashtag in neutral_hashtags):
-                neutral_hashtags[hashtag] += 1
-            else:
-                neutral_hashtags[hashtag] = 1
-
-sorted_neutral_users = sorted(neutral_users, key=neutral_users.get, reverse=True)
-sorted_neutral_hashtags = sorted(neutral_hashtags, key=neutral_hashtags.get, reverse=True)
-print("\n5 users with the most neutral tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_neutral_users[i], neutral_users[sorted_neutral_users[i]]))
-print("\n5 most popular hashtags in the neutral tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_neutral_hashtags[i], neutral_hashtags[sorted_neutral_hashtags[i]]))
-
-
-negative_tweets = list(collection.find({"sentiment":"negative"}))
-negative_users = {}
-negative_hashtags = {}
-for tweet in negative_tweets:
-    if(tweet["user"] in negative_tweets):
-        negative_users[tweet["user"]] += 1
-    else:
-        negative_users[tweet["user"]] = 1
-
-    hashtags = [word for word in tweet["text"].replace(',','').split() if word[0] == '#']
-    if(len(hashtags) > 0):
-        for hashtag in hashtags:
-            if(hashtag in negative_hashtags):
-                negative_hashtags[hashtag] += 1
-            else:
-                negative_hashtags[hashtag] = 1
-
-sorted_negative_users = sorted(negative_users, key=negative_users.get, reverse=True)
-sorted_negative_hashtags = sorted(negative_hashtags, key=negative_hashtags.get, reverse=True)
-print("\n5 users with the most negative tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_negative_users[i], negative_users[sorted_negative_users[i]]))
-print("\n5 most popular hashtags in the negative tweets:")
-for i in range(5):
-    print("%s with %d tweets." % (sorted_negative_hashtags[i], negative_hashtags[sorted_negative_hashtags[i]]))
+for cluster in sorted(clustering_count.keys()):
+    print("New tweets for cluster %d: %d" % (cluster, clustering_count[cluster]))
