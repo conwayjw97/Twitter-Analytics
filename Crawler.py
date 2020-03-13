@@ -8,9 +8,19 @@ import tweepy
 import time
 import sys
 import re
+import json
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
+
+def clean_up_tweet(tweet):
+    # Remove URLs
+    tweet = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', str(tweet), flags=re.MULTILINE)
+    # Remove new lines
+    tweet = re.sub(r'/\r?\n|\r/', '', str(tweet), flags=re.MULTILINE)
+    # Remove broken symbols
+    tweet = re.sub(r'&amp;', '', str(tweet), flags=re.MULTILINE)
+    return tweet
 
 class RestCrawler():
     def __init__(self, auth, scrape_max):
@@ -23,13 +33,33 @@ class RestCrawler():
         tweet_count = 0
         try:
             print("Scraping keyword '%s' with the REST API..." % keyword)
-            for tweet in api.search(q=keyword, lang="en", result_type="recent", count=self.scrape_max, full_text=True, tweet_mode="extended"):
-                # Try to get the extended tweet if it's long enough
+            for status in api.search(q=keyword, lang="en", result_type="recent", count=self.scrape_max, full_text=True, tweet_mode="extended"):
+                data = {}
+                data["time"] = status.created_at
+                data["user"] = status.user.screen_name
+
                 try:
-                    tweet_text = tweet.retweeted_status.full_text
-                except AttributeError:  # Not a Retweet
-                    tweet_text = tweet.full_text
-                rest_tweets.append({"id":tweet.id,"data":{"time":tweet.created_at,"user":tweet.user.screen_name,"text":tweet_text}})
+                    tweet_text = status.extended_tweet["full_text"]
+                except AttributeError:
+                    tweet_text = status.full_text
+                data["text"] = clean_up_tweet(tweet_text)
+
+                if hasattr(status, "retweeted_status"):  # Check if Retweet
+                    # print("retweeted status:", status.retweeted_status)
+                    data["retweeted_user"] = status.retweeted_status.user.screen_name
+                    data["retweeted_id"] = status.retweeted_status.id
+                    try:
+                        retweeted_text = status.retweeted_status.extended_tweet["full_text"]
+                    except AttributeError:
+                        retweeted_text = status.retweeted_status.full_text
+                    data["retweeted_text"] = clean_up_tweet(retweeted_text)
+
+                if hasattr(status, "in_reply_to_screen_name"): # Check if a reply
+                    data["replying_to_tweet"] = status.in_reply_to_status_id
+                    data["replying_to_user"] = status.in_reply_to_screen_name
+
+                rest_tweets.append({"id":status.id, "data":data})
+
                 tweet_count += 1
         except BaseException as e:
             print("Failed, on_status:", str(e))
@@ -46,18 +76,31 @@ class MyStreamListener(tweepy.StreamListener):
 
     def on_status(self, status):
         if (time.time() - self.start_time) < self.time_limit:
-            # Try to get the extended tweet if it's long enough
+            data = {}
+            data["time"] = status.created_at
+            data["user"] = status.user.screen_name
+
+            try:
+                tweet_text = status.extended_tweet["full_text"]
+            except AttributeError:
+                tweet_text = status.text
+            data["text"] = clean_up_tweet(tweet_text)
+
             if hasattr(status, "retweeted_status"):  # Check if Retweet
+                # print("retweeted status:", status.retweeted_status)
+                data["retweeted_user"] = status.retweeted_status.user.screen_name
+                data["retweeted_id"] = status.retweeted_status.id
                 try:
-                    tweet_text = status.retweeted_status.extended_tweet["full_text"]
+                    retweeted_text = status.retweeted_status.extended_tweet["full_text"]
                 except AttributeError:
-                    tweet_text = status.retweeted_status.text
-            else:
-                try:
-                    tweet_text = status.extended_tweet["full_text"]
-                except AttributeError:
-                    tweet_text = status.text
-            self.tweets.append({"id":status.id,"data":{"time":status.created_at,"user":status.user.screen_name,"text":tweet_text}})
+                    retweeted_text = status.retweeted_status.text
+                data["retweeted_text"] = clean_up_tweet(retweeted_text)
+
+            if hasattr(status, "in_reply_to_screen_name"): # Check if a reply
+                data["replying_to_tweet"] = status.in_reply_to_status_id
+                data["replying_to_user"] = status.in_reply_to_screen_name
+
+            self.tweets.append({"id":status.id, "data":data})
             self.tweet_count += 1
             return True
         else:
@@ -101,24 +144,6 @@ def find_power_users(tweets, no_users):
 
     return(sorted_power_users[:no_users])
 
-def clean_up_tweets(tweets):
-    print("Cleaning up tweets.")
-    tweets_to_remove = []
-    for i in range(len(tweets)):
-        tweet = tweets[i]["data"]
-        # Remove URLs
-        tweet["text"] = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', tweet["text"], flags=re.MULTILINE)
-        # Remove new lines
-        tweet["text"] = re.sub(r'/\r?\n|\r/', '', tweet["text"], flags=re.MULTILINE)
-        # Remove broken symbols
-        tweet["text"] = re.sub(r'&amp;', '', tweet["text"], flags=re.MULTILINE)
-        # Remove very short tweets
-        if(len(tweet["text"]) < 10):
-            tweets_to_remove.append(tweets[i])
-    for tweet in tweets_to_remove:
-        tweets.remove(tweet)
-    return tweets
-
 def print_tweets(tweets):
     for tweet in tweets:
         tweet = tweet["data"]
@@ -160,7 +185,9 @@ else:
 
     # Scrape with Streaming filtering by trending words
     stream_crawler = StreamCrawler(auth, trend_keywords, STREAM_TIME_LIMIT)
-    stream_tweets = clean_up_tweets(stream_crawler.scrape())
+    stream_tweets = stream_crawler.scrape()
+
+    print(stream_tweets)
 
     # Find power users
     power_users = find_power_users(stream_tweets, NO_POWER_USERS)
@@ -169,7 +196,7 @@ else:
     rest_crawler = RestCrawler(auth, REST_TWEET_MAX)
     rest_tweets = []
     for user in power_users:
-        rest_tweets += clean_up_tweets(rest_crawler.scrape(user))
+        rest_tweets += rest_crawler.scrape(user)
 
     # Save tweets to MongoDB
     print("Saving scraped tweets to MongoDB...\n")

@@ -11,7 +11,10 @@ collection = db["tweets"]
 tweets = list(collection.find({}))
 
 # Clusterise tweets
-no_clusters = 10
+print("Clustering tweets...\n")
+
+no_clusters = int(len(tweets)/100)
+print("Cluster number: %d" % no_clusters)
 
 tweet_text = []
 for tweet in tweets:
@@ -33,17 +36,18 @@ for i in range(no_clusters):
     print()
 
 # Update database entry with clustering
+print("Updating MongoDB tweets with clusterings...\n")
+
 clustering_count = {}
 for tweet in tweets:
-    if("cluster" not in tweet):
-        update_query = {"id":tweet["id"]}
-        cluster = model.predict(vectorizer.transform([tweet["text"]]))[0]
-        if(cluster in clustering_count):
-            clustering_count[cluster] += 1
-        else:
-            clustering_count[cluster] = 1
-        new_cluster = {"$set":{"cluster":int(cluster)}}
-        collection.update_one(update_query, new_cluster)
+    update_query = {"id":tweet["id"]}
+    cluster = model.predict(vectorizer.transform([tweet["text"]]))[0]
+    if(cluster in clustering_count):
+        clustering_count[cluster] += 1
+    else:
+        clustering_count[cluster] = 1
+    new_cluster = {"$set":{"cluster":int(cluster)}}
+    collection.update_one(update_query, new_cluster)
 
 for cluster in sorted(clustering_count.keys()):
     print("New tweets for cluster %d: %d" % (cluster, clustering_count[cluster]))
