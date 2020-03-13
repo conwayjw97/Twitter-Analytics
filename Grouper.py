@@ -1,7 +1,6 @@
 import pymongo
 import tweepy
 
-from textblob import TextBlob
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
@@ -21,7 +20,7 @@ for tweet in tweets:
 vectorizer = TfidfVectorizer(stop_words='english')
 X = vectorizer.fit_transform(tweet_text)
 
-model = KMeans(n_clusters=no_clusters, init='k-means++', max_iter=100, n_init=1)
+model = KMeans(n_clusters=no_clusters, init='k-means++', max_iter=100, n_init=10)
 model.fit(X)
 
 print("Top terms per cluster:")
@@ -34,17 +33,16 @@ for i in range(no_clusters):
     print()
 
 # Update database entry with clustering
-tweets = list(collection.find({}))
 clustering_count = {}
 for tweet in tweets:
-    if("sentiment" not in tweet):
+    if("cluster" not in tweet):
         update_query = {"id":tweet["id"]}
         cluster = model.predict(vectorizer.transform([tweet["text"]]))[0]
         if(cluster in clustering_count):
             clustering_count[cluster] += 1
         else:
             clustering_count[cluster] = 1
-        new_cluster = {"$set":{"clustter":int(cluster)}}
+        new_cluster = {"$set":{"cluster":int(cluster)}}
         collection.update_one(update_query, new_cluster)
 
 for cluster in sorted(clustering_count.keys()):

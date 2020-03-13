@@ -33,7 +33,7 @@ class RestCrawler():
                 tweet_count += 1
         except BaseException as e:
             print("Failed, on_status:", str(e))
-        print ("Number of tweets scraped through REST:", tweet_count, "\n")
+        print ("Number of tweets scraped through REST:", tweet_count)
         return rest_tweets
 
 class MyStreamListener(tweepy.StreamListener):
@@ -82,7 +82,7 @@ class StreamCrawler():
             pass
         except BaseException as e:
             print("Failed, on_status:", str(e))
-        print("Number of tweets fetched through streaming:", listener.tweet_count, "\n")
+        print("Number of tweets fetched through streaming:", listener.tweet_count)
         return listener.get_tweets()
 
 def find_power_users(tweets, no_users):
@@ -135,9 +135,11 @@ def scrape_trends(auth):
     for trend in trends:
         trend_keywords.append(trend["name"])
 
+    print("Trending keywords:", trend_keywords)
+
     return trend_keywords
 
-if(len(sys.argv) - 1 < 2):
+if(len(sys.argv) - 1 < 3):
     print("Please run this program with arguments: Crawler.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets>")
 else:
     # Scraping parameters
