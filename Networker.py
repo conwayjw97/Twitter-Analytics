@@ -89,6 +89,8 @@ if(len(sys.argv) - 1 < 1):
     print("2 - Cluster Reply Interaction Graphs")
     print("3 - General Retweet Interaction Graph")
     print("4 - Cluster Retweet Interaction Graphs")
+    print("5 - General Retweet Interaction Graph")
+    print("6 - Cluster Retweet Interaction Graphs")
 else:
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["WebScienceAssessment"]
@@ -104,10 +106,18 @@ else:
     elif(GRAPH_CHOICE == 2):
         cluster_reply_graphs = cluster_reply_graphs(collection)
 
+    # Construct general reply interaction graph
+    if(GRAPH_CHOICE == 3):
+        mention_graph = general_mention_graph(collection)
+
+    # Construct cluster reply interaction graphs
+    elif(GRAPH_CHOICE == 4):
+        cluster_mention_graphs = cluster_mention_graphs(collection)
+
     # Construct general retweet interaction graph
-    elif(GRAPH_CHOICE == 3):
+    elif(GRAPH_CHOICE == 5):
         retweet_graph = general_retweet_graph(collection)
 
     # Construct cluster retweet interaction graphs
-    elif(GRAPH_CHOICE == 4):
+    elif(GRAPH_CHOICE == 6):
         cluster_retweet_graphs = cluster_retweet_graphs(collection)

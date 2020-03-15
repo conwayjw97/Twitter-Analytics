@@ -86,8 +86,8 @@ class MyStreamListener(tweepy.StreamListener):
                 tweet_text = status.text
             data["text"] = clean_up_tweet(tweet_text)
 
-            if hasattr(status, "retweeted_status"):  # Check if Retweet
-                # print("retweeted status:", status.retweeted_status)
+            # Check if Retweet
+            if hasattr(status, "retweeted_status"):
                 data["retweeted_user"] = status.retweeted_status.user.screen_name
                 data["retweeted_id"] = status.retweeted_status.id
                 try:
@@ -96,9 +96,25 @@ class MyStreamListener(tweepy.StreamListener):
                     retweeted_text = status.retweeted_status.text
                 data["retweeted_text"] = clean_up_tweet(retweeted_text)
 
-            if hasattr(status, "in_reply_to_screen_name"): # Check if a reply
+            # Check if a reply
+            if hasattr(status, "in_reply_to_screen_name"):
                 data["replying_to_tweet"] = status.in_reply_to_status_id
                 data["replying_to_user"] = status.in_reply_to_screen_name
+
+            # Check for user mentions or hashtags
+            if hasattr(status, "entities"):
+                entities = status.entities
+                if(("user_mentions" in entities) and len(entities["user_mentions"]) > 0):
+                    data["mentioned_users"] = []
+                    for mention in entities["user_mentions"]:
+                        data["mentioned_users"].append(mention["screen_name"])
+                    print("MENTIONS:", data["mentioned_users"])
+
+                if(("hashtags" in entities) and len(entities["hashtags"]) > 0):
+                    data["hashtags"] = []
+                    for hashtag in entities["hashtags"]:
+                        data["hashtags"].append(hashtag["text"])
+                    print("HASHTAGS:", data["hashtags"])
 
             self.tweets.append({"id":status.id, "data":data})
             self.tweet_count += 1
@@ -187,8 +203,6 @@ else:
     stream_crawler = StreamCrawler(auth, trend_keywords, STREAM_TIME_LIMIT)
     stream_tweets = stream_crawler.scrape()
 
-    print(stream_tweets)
-
     # Find power users
     power_users = find_power_users(stream_tweets, NO_POWER_USERS)
 
@@ -199,14 +213,14 @@ else:
         rest_tweets += rest_crawler.scrape(user)
 
     # Save tweets to MongoDB
-    print("Saving scraped tweets to MongoDB...\n")
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
-    db = client["WebScienceAssessment"]
-    collection = db["tweets"]
-    for tweet in rest_tweets:
-        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-    for tweet in stream_tweets:
-        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-
-    print("Done.")
-    print("Total number of tweets stored:", collection.count())
+    # print("Saving scraped tweets to MongoDB...\n")
+    # client = pymongo.MongoClient("mongodb://localhost:27017/")
+    # db = client["WebScienceAssessment"]
+    # collection = db["tweets"]
+    # for tweet in rest_tweets:
+    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+    # for tweet in stream_tweets:
+    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+    #
+    # print("Done.")
+    # print("Total number of tweets stored:", collection.count())
