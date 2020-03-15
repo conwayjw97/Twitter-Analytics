@@ -4,29 +4,66 @@ from itertools import combinations
 import pymongo
 import networkx as nx
 import sys
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 
 # https://stackoverflow.com/questions/20190520/listing-triads-in-a-multi-edge-graph
 # http://www.analytictech.com/ucinet/help/hs4335.htm
 # https://www.researchgate.net/figure/The-collection-of-all-triad-types-triad-census-The-labels-consist-of-three-digits-the_fig1_320707617
 # https://stackoverflow.com/questions/54730863/how-to-get-triad-census-in-undirected-graph-using-networkx-in-python
 
-def directed_triadic_census(graph):
+def directed_triadic_census(graph, file_name):
     print("\nCalculating triadic census...")
     triadic_census = nx.triadic_census(graph)
     print("Done!\n")
+
+    # There's probably a much more efficient way of doing this
+    values = []
+    labels = []
     print("A<-B->C triads: %d" % triadic_census["021D"])
+    values.append(triadic_census["021D"])
+    labels.append("A<-B->C")
     print("A->B<-C triads: %d" % triadic_census["021U"])
+    # values.append(triadic_census["021U"])
+    # labels.append("A->B<-C")
     print("A->B->C triads: %d" % triadic_census["021C"])
+    values.append(triadic_census["021C"])
+    labels.append("A->B->C")
     print("A<->B<-C triads: %d" % triadic_census["111D"])
+    values.append(triadic_census["111D"])
+    labels.append("A<->B<-C")
     print("A<->B->C triads: %d" % triadic_census["111U"])
+    values.append(triadic_census["111U"])
+    labels.append("A<->B->C")
     print("A->B<-C,A->C triads: %d" % triadic_census["030T"])
+    values.append(triadic_census["030T"])
+    labels.append("A->B<-C,A->C")
     print("A<-B<-C,A->C triads: %d" % triadic_census["030C"])
+    values.append(triadic_census["030C"])
+    labels.append("A<-B<-C,A->C")
     print("A<->B<->C triads: %d" % triadic_census["201"])
+    values.append(triadic_census["201"])
+    labels.append("A<->B<->C")
     print("A<-B->C,A<->C triads: %d" % triadic_census["120D"])
+    values.append(triadic_census["120D"])
+    labels.append("A<-B->C,A<->C")
     print("A->B<-C,A<->C triads: %d" % triadic_census["120U"])
+    values.append(triadic_census["120U"])
+    labels.append("A->B<-C,A<->C")
     print("A->B->C,A<->C triads: %d" % triadic_census["120C"])
+    values.append(triadic_census["120C"])
+    labels.append("A->B->C,A<->C")
     print("A->B<->C,A<->C triads: %d" % triadic_census["210"])
+    values.append(triadic_census["210"])
+    labels.append("A->B<->C,A<->C")
     print("A<->B<->C,A<->C triads: %d" % triadic_census["300"])
+    values.append(triadic_census["300"])
+    labels.append("A<->B<->C,A<->C")
+
+    plt.bar(range(len(values)), values, align='center', alpha=0.5)
+    plt.xticks(range(len(labels)), labels, rotation=60)
+    plt.savefig("graphs/"+file_name+".png")
 
 def undirected_triadic_census(graph):
     print("\nCalculating triadic census...")
@@ -47,6 +84,7 @@ def undirected_triadic_census(graph):
         print("A-B-C,A-C triads: %d" % len(triadic_census[3]))
     else:
         print("A-B-C,A-C triads: %d" % 0)
+    return triadic_census
 
 if(len(sys.argv) - 1 < 1):
     print("Please run this program with arguments: network_analytics.py <Network_Type>")
@@ -70,6 +108,7 @@ else:
             print("Network analytics for general reply graph.")
             print("-------------------------------------------\n")
             graph = networker.general_reply_graph(collection)
+            file_name = "general_reply_graph"
         elif(GRAPH_CHOICE == 3):
             print("Network analytics for general mention graph.")
             print("-------------------------------------------\n")
@@ -87,7 +126,7 @@ else:
         print("Ties: %d" % graph.number_of_edges())
 
         if(GRAPH_CHOICE in (1, 3, 5)):
-            directed_triadic_census(graph)
+            directed_triadic_census(graph, file_name)
         elif(GRAPH_CHOICE == 7):
             undirected_triadic_census(graph)
 
