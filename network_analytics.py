@@ -30,12 +30,23 @@ def directed_triadic_census(graph):
 
 def undirected_triadic_census(graph):
     print("\nCalculating triadic census...")
-    triad_class = {}
+    triadic_census = {}
     for nodes in combinations(graph.nodes, 3):
         n_edges = graph.subgraph(nodes).number_of_edges()
-        triad_class.setdefault(n_edges, []).append(nodes)
+        triadic_census.setdefault(n_edges, []).append(nodes)
     print("Done!\n")
-    print(triad_class)
+    if(1 in triadic_census):
+        print("A-B,C triads: %d" % len(triadic_census[1]))
+    else:
+        print("A-B,C triads: %d" % 0)
+    if(2 in triadic_census):
+        print("A-B-C triads: %d" % len(triadic_census[2]))
+    else:
+        print("A-B-C triads: %d" % 0)
+    if(3 in triadic_census):
+        print("A-B-C,A-C triads: %d" % len(triadic_census[3]))
+    else:
+        print("A-B-C,A-C triads: %d" % 0)
 
 if(len(sys.argv) - 1 < 1):
     print("Please run this program with arguments: network_analytics.py <Network_Type>")
@@ -82,10 +93,29 @@ else:
 
     elif(GRAPH_CHOICE in (2, 4, 6, 8)):
         if(GRAPH_CHOICE == 2):
-            cluster_reply_graphs = networker.cluster_reply_graphs(collection)
+            print("Network analytics for cluster reply graphs.")
+            print("-------------------------------------------\n")
+            cluster_graphs = networker.cluster_reply_graphs(collection)
         elif(GRAPH_CHOICE == 4):
-            cluster_mention_graphs = networker.cluster_mention_graphs(collection)
+            print("Network analytics for cluster mention graphs.")
+            print("-------------------------------------------\n")
+            cluster_graphs = networker.cluster_mention_graphs(collection)
         elif(GRAPH_CHOICE == 6):
-            cluster_retweet_graphs = networker.cluster_retweet_graphs(collection)
+            print("Network analytics for cluster retweet graphs.")
+            print("-------------------------------------------\n")
+            cluster_graphs = networker.cluster_retweet_graphs(collection)
         elif(GRAPH_CHOICE == 8):
-            cluster_hashtag_graphs = networker.cluster_hashtag_graphs(collection)
+            print("Network analytics for cluster hashtag graphs.")
+            print("-------------------------------------------\n")
+            cluster_graphs = networker.cluster_hashtag_graphs(collection)
+
+        i = 0
+        for graph in cluster_graphs:
+            print("\n\nCluster %d." % i)
+            print()
+            print("Ties: %d" % graph.number_of_edges())
+            if(GRAPH_CHOICE in (2, 4, 6)):
+                directed_triadic_census(graph)
+            elif(GRAPH_CHOICE == 8):
+                undirected_triadic_census(graph)
+            i += 1
