@@ -7,7 +7,8 @@ from matplotlib import pylab
 
 
 def save_graph(graph, file_name):
-    #initialze Figure
+    print("Construction and saving %s.pdf..." % file_name)
+
     plt.figure(num=None, figsize=(20, 20), dpi=80)
     plt.axis('off')
     fig = plt.figure(1)
@@ -22,9 +23,11 @@ def save_graph(graph, file_name):
     plt.xlim(0, xmax)
     plt.ylim(0, ymax)
 
-    plt.savefig(file_name,bbox_inches="tight")
+    plt.savefig(file_name+".pdf", bbox_inches="tight")
     pylab.close()
     del fig
+
+    print("Done!")
 
 def general_reply_graph(collection):
     print("Constructing general reply graph...", end="")
@@ -32,7 +35,7 @@ def general_reply_graph(collection):
     users = list(collection.find({}).distinct("user"))
     reply_graph.add_nodes_from(users)
     for tweet in tweets:
-        if (hasattr(tweet, "replying_to_user") and (tweet["replying_to_user"] is not None)):
+        if(("replying_to_user" in tweet) and len(tweet["replying_to_user"]) > 0):
             reply_graph.add_edge(tweet["user"], tweet["replying_to_user"])
     print("Done!")
     return reply_graph
@@ -48,11 +51,41 @@ def cluster_reply_graphs(collection):
         reply_graph = nx.DiGraph()
         reply_graph.add_nodes_from(cluster_users)
         for tweet in cluster_tweets:
-            if (hasattr(tweet, "replying_to_user") and (tweet["replying_to_user"] is not None)):
+            if(("replying_to_user" in tweet) and len(tweet["replying_to_user"]) > 0):
                 reply_graph.add_edge(tweet["user"], tweet["replying_to_user"])
         cluster_reply_graphs.append(reply_graph)
         print("Done!")
     return(cluster_reply_graphs)
+
+def general_mention_graph(collection):
+    print("Constructing general mention graph...", end="")
+    mention_graph = nx.DiGraph()
+    users = list(collection.find({}).distinct("user"))
+    mention_graph.add_nodes_from(users)
+    for tweet in tweets:
+        if(("mentioned_users" in tweet) and len(tweet["mentioned_users"]) > 0):
+            for mention in tweet["mentioned_users"]:
+                mention_graph.add_edge(tweet["user"], mention)
+    print("Done!")
+    return mention_graph
+
+def cluster_mention_graphs(collection):
+    print("Constructing cluster mention graphs...")
+    clusters = list(collection.distinct("cluster"))
+    cluster_mention_graphs = []
+    for cluster in sorted(clusters):
+        print("Constructing mention graph for cluster %d..." % cluster, end="")
+        cluster_tweets = list(collection.find({"cluster":cluster}))
+        cluster_users = list(collection.find({"cluster":cluster}).distinct("user"))
+        mention_graph = nx.DiGraph()
+        mention_graph.add_nodes_from(cluster_users)
+        for tweet in cluster_tweets:
+            if(("mentioned_users" in tweet) and len(tweet["mentioned_users"]) > 0):
+                for mention in tweet["mentioned_users"]:
+                    mention_graph.add_edge(tweet["user"], mention)
+        cluster_mention_graphs.append(mention_graph)
+        print("Done!")
+    return(cluster_mention_graphs)
 
 def general_retweet_graph(collection):
     print("Constructing general retweet graph...", end="")
@@ -60,7 +93,7 @@ def general_retweet_graph(collection):
     users = list(collection.find({}).distinct("user"))
     retweet_graph.add_nodes_from(users)
     for tweet in tweets:
-        if(hasattr(tweet, "retweeted_user") and (tweet["retweeted_user"] is not None)):
+        if(("retweeted_user" in tweet) and len(tweet["retweeted_user"]) > 0):
             retweet_graph.add_edge(tweet["retweeted_user"], tweet["user"])
     print("Done!")
     return retweet_graph
@@ -76,7 +109,7 @@ def cluster_retweet_graphs(collection):
         retweet_graph = nx.DiGraph()
         retweet_graph.add_nodes_from(cluster_users)
         for tweet in cluster_tweets:
-            if(hasattr(tweet, "retweeted_user") and (tweet["retweeted_user"] is not None)):
+            if(("retweeted_user" in tweet) and len(tweet["retweeted_user"]) > 0):
                 retweet_graph.add_edge(tweet["retweeted_user"], tweet["user"])
         cluster_retweet_graphs.append(retweet_graph)
         print("Done!")
@@ -87,10 +120,12 @@ if(len(sys.argv) - 1 < 1):
     print("\n<Network_Type> choices:")
     print("1 - General Reply Interaction Graph")
     print("2 - Cluster Reply Interaction Graphs")
-    print("3 - General Retweet Interaction Graph")
-    print("4 - Cluster Retweet Interaction Graphs")
+    print("3 - General Mention Interaction Graph")
+    print("4 - Cluster Mention Interaction Graphs")
     print("5 - General Retweet Interaction Graph")
     print("6 - Cluster Retweet Interaction Graphs")
+    print("7 - General Hashtag Co-occurence Graph")
+    print("8 - Cluster Hashtag Co-occurence Graphs")
 else:
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["WebScienceAssessment"]
@@ -121,3 +156,11 @@ else:
     # Construct cluster retweet interaction graphs
     elif(GRAPH_CHOICE == 6):
         cluster_retweet_graphs = cluster_retweet_graphs(collection)
+
+    # Construct general retweet interaction graph
+    elif(GRAPH_CHOICE == 7):
+        retweet_graph = general_hashtag_graph(collection)
+
+    # Construct cluster retweet interaction graphs
+elif(GRAPH_CHOICE == 8):
+        cluster_retweet_graphs = cluster_hashtag_graphs(collection)

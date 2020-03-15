@@ -58,6 +58,19 @@ class RestCrawler():
                     data["replying_to_tweet"] = status.in_reply_to_status_id
                     data["replying_to_user"] = status.in_reply_to_screen_name
 
+                # Check for user mentions or hashtags
+                if hasattr(status, "entities"):
+                    entities = status.entities
+                    if(("user_mentions" in entities) and len(entities["user_mentions"]) > 0):
+                        data["mentioned_users"] = []
+                        for mention in entities["user_mentions"]:
+                            data["mentioned_users"].append(mention["screen_name"])
+
+                    if(("hashtags" in entities) and len(entities["hashtags"]) > 0):
+                        data["hashtags"] = []
+                        for hashtag in entities["hashtags"]:
+                            data["hashtags"].append(hashtag["text"])
+
                 rest_tweets.append({"id":status.id, "data":data})
 
                 tweet_count += 1
@@ -108,13 +121,11 @@ class MyStreamListener(tweepy.StreamListener):
                     data["mentioned_users"] = []
                     for mention in entities["user_mentions"]:
                         data["mentioned_users"].append(mention["screen_name"])
-                    print("MENTIONS:", data["mentioned_users"])
 
                 if(("hashtags" in entities) and len(entities["hashtags"]) > 0):
                     data["hashtags"] = []
                     for hashtag in entities["hashtags"]:
                         data["hashtags"].append(hashtag["text"])
-                    print("HASHTAGS:", data["hashtags"])
 
             self.tweets.append({"id":status.id, "data":data})
             self.tweet_count += 1
@@ -182,6 +193,9 @@ def scrape_trends(auth):
 
 if(len(sys.argv) - 1 < 3):
     print("Please run this program with arguments: Crawler.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets>")
+    print("\n<No_Power_Users>: Number of power users to be used in REST tweet crawling.")
+    print("<Stream_Time>: Amount of time in seconds to perform 1% Stream crawling.")
+    print("<Max_REST_Tweets>: Max number of tweets to try to retrieve for each REST tweet crawling request.")
 else:
     # Scraping parameters
     NO_POWER_USERS = int(sys.argv[1])
@@ -213,14 +227,14 @@ else:
         rest_tweets += rest_crawler.scrape(user)
 
     # Save tweets to MongoDB
-    # print("Saving scraped tweets to MongoDB...\n")
-    # client = pymongo.MongoClient("mongodb://localhost:27017/")
-    # db = client["WebScienceAssessment"]
-    # collection = db["tweets"]
-    # for tweet in rest_tweets:
-    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-    # for tweet in stream_tweets:
-    #     collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
-    #
-    # print("Done.")
-    # print("Total number of tweets stored:", collection.count())
+    print("Saving scraped tweets to MongoDB...\n")
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client["WebScienceAssessment"]
+    collection = db["tweets"]
+    for tweet in rest_tweets:
+        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+    for tweet in stream_tweets:
+        collection.update({"id":tweet["id"]}, {"$set" : tweet["data"]}, upsert=True)
+
+    print("Done.")
+    print("Total number of tweets stored:", collection.count())

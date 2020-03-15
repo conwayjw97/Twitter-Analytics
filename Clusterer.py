@@ -26,11 +26,10 @@ X = vectorizer.fit_transform(tweet_text)
 model = KMeans(n_clusters=no_clusters, init='k-means++', max_iter=100, n_init=10)
 model.fit(X)
 
-print("Top terms per cluster:")
 order_centroids = model.cluster_centers_.argsort()[:, ::-1]
 terms = vectorizer.get_feature_names()
 for i in range(no_clusters):
-    print ("Cluster %d:" % i)
+    print ("Top terms for Cluster %d:" % i)
     for ind in order_centroids[i, :10]:
         print(' %s' % terms[ind])
     print()
