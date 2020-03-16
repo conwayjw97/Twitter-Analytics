@@ -10,11 +10,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'figure.autolayout': True})
 
-# https://stackoverflow.com/questions/20190520/listing-triads-in-a-multi-edge-graph
-# http://www.analytictech.com/ucinet/help/hs4335.htm
-# https://www.researchgate.net/figure/The-collection-of-all-triad-types-triad-census-The-labels-consist-of-three-digits-the_fig1_320707617
-# https://stackoverflow.com/questions/54730863/how-to-get-triad-census-in-undirected-graph-using-networkx-in-python
-
 def directed_triadic_census(graph, file_name):
     print("\nCalculating triadic census...")
     triadic_census = nx.triadic_census(graph)
