@@ -1,4 +1,4 @@
-from utils import networker
+from utils import networking
 from itertools import combinations
 
 import pymongo
@@ -118,22 +118,22 @@ else:
         if(GRAPH_CHOICE == 1):
             print("Network analytics for general reply graph.")
             print("-------------------------------------------\n")
-            graph = networker.general_reply_graph(collection)
+            graph = networking.general_reply_graph(collection)
             file_name = "replies/general/general_reply_graph"
         elif(GRAPH_CHOICE == 3):
             print("Network analytics for general mention graph.")
             print("-------------------------------------------\n")
-            graph = networker.general_mention_graph(collection)
+            graph = networking.general_mention_graph(collection)
             file_name = "mentions/general/general_mention_graph"
         elif(GRAPH_CHOICE == 5):
             print("Network analytics for general retweet graph.")
             print("-------------------------------------------\n")
-            graph = networker.general_retweet_graph(collection)
+            graph = networking.general_retweet_graph(collection)
             file_name = "retweets/general/general_retweet_graph"
         elif(GRAPH_CHOICE == 7):
             print("Network analytics for general hashtag graph.")
             print("-------------------------------------------\n")
-            graph = networker.general_hashtag_graph(collection)
+            graph = networking.general_hashtag_graph(collection)
             file_name = "hashtags/general/general_hashtag_graph"
 
         print()
@@ -148,22 +148,22 @@ else:
         if(GRAPH_CHOICE == 2):
             print("Network analytics for cluster reply graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networker.cluster_reply_graphs(collection)
+            cluster_graphs = networking.cluster_reply_graphs(collection)
             file_name = "replies/clusters/cluster_reply_graph"
         elif(GRAPH_CHOICE == 4):
             print("Network analytics for cluster mention graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networker.cluster_mention_graphs(collection)
+            cluster_graphs = networking.cluster_mention_graphs(collection)
             file_name = "mentions/clusters/cluster_mention_graph"
         elif(GRAPH_CHOICE == 6):
             print("Network analytics for cluster retweet graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networker.cluster_retweet_graphs(collection)
+            cluster_graphs = networking.cluster_retweet_graphs(collection)
             file_name = "retweets/clusters/cluster_retweet_graph"
         elif(GRAPH_CHOICE == 8):
             print("Network analytics for cluster hashtag graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networker.cluster_hashtag_graphs(collection)
+            cluster_graphs = networking.cluster_hashtag_graphs(collection)
             file_name = "hashtags/clusters/cluster_hashtag_graph"
 
         i = 0

@@ -4,7 +4,6 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib import pylab
 
-
 def save_graph(graph, file_name):
     print("Construction and saving %s.pdf..." % file_name)
 
