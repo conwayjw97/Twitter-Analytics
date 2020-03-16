@@ -51,7 +51,7 @@ def cluster_reply_graphs(collection):
         reply_graph = nx.DiGraph()
         reply_graph.add_nodes_from(cluster_users)
         for tweet in cluster_tweets:
-            if("replying_to_user" in tweet):
+            if("replying_to_user" in tweet and tweet["replying_to_user"] is not None):
                 reply_graph.add_edge(tweet["user"], tweet["replying_to_user"])
         cluster_reply_graphs.append(reply_graph)
         print("Done!")

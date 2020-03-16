@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'figure.autolayout': True})
 
-def directed_triadic_census(graph, file_name):
+def directed_triadic_census(graph, file_name, save_graphs):
     print("\nCalculating triadic census...")
     triadic_census = nx.triadic_census(graph)
     print("Done!\n")
@@ -58,12 +58,13 @@ def directed_triadic_census(graph, file_name):
     values.append(triadic_census["300"])
     labels.append("A<->B<->C,A<->C")
 
-    plt.figure()
-    plt.bar(range(len(values)), values, align='center', alpha=0.5)
-    plt.xticks(range(len(labels)), labels, rotation=60)
-    plt.savefig("graphs/"+file_name+".png")
+    if(save_graphs == 1):
+        plt.figure()
+        plt.bar(range(len(values)), values, align='center', alpha=0.5)
+        plt.xticks(range(len(labels)), labels, rotation=60)
+        plt.savefig("graphs/"+file_name+".png")
 
-def undirected_triadic_census(graph, file_name):
+def undirected_triadic_census(graph, file_name, save_graphs):
     print("\nCalculating triadic census...")
     triadic_census = {"A-B-C":0, "A-B-C,A-C":0}
     while(len(graph.nodes())>0):
@@ -86,13 +87,14 @@ def undirected_triadic_census(graph, file_name):
     values.append(triadic_census["A-B-C,A-C"])
     labels.append("A-B-C,A-C")
 
-    plt.figure()
-    plt.bar(range(len(values)), values, align='center', alpha=0.5)
-    plt.xticks(range(len(labels)), labels, rotation=60)
-    plt.savefig("graphs/"+file_name+".png")
+    if(save_graphs == 1):
+        plt.figure()
+        plt.bar(range(len(values)), values, align='center', alpha=0.5)
+        plt.xticks(range(len(labels)), labels, rotation=60)
+        plt.savefig("graphs/"+file_name+".png")
 
-if(len(sys.argv) - 1 < 1):
-    print("Please run this program with arguments: network_analytics.py <Network_Type>")
+if(len(sys.argv) - 1 < 2):
+    print("Please run this program with arguments: network_analytics.py <Network_Type> <Save_Graphs>")
     print("\n<Network_Type> choices:")
     print("1 - General Reply Interaction Graph")
     print("2 - Cluster Reply Interaction Graphs")
@@ -102,11 +104,15 @@ if(len(sys.argv) - 1 < 1):
     print("6 - Cluster Retweet Interaction Graphs")
     print("7 - General Hashtag Co-occurence Graph")
     print("8 - Cluster Hashtag Co-occurence Graphs")
+    print("\n<Save_Graphs> choices:")
+    print("0 - Don't save graphs")
+    print("1 - Save graphs as .png files in /graphs")
 else:
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["WebScienceAssessment"]
     collection = db["tweets"]
     GRAPH_CHOICE = int(sys.argv[1])
+    SAVE_GRAPHS = int(sys.argv[2])
 
     if(GRAPH_CHOICE in (1, 3, 5, 7)):
         if(GRAPH_CHOICE == 1):
@@ -134,9 +140,9 @@ else:
         print("Ties: %d" % graph.number_of_edges())
 
         if(GRAPH_CHOICE in (1, 3, 5)):
-            directed_triadic_census(graph, file_name)
+            directed_triadic_census(graph, file_name, SAVE_GRAPHS)
         elif(GRAPH_CHOICE == 7):
-            undirected_triadic_census(graph, file_name)
+            undirected_triadic_census(graph, file_name, SAVE_GRAPHS)
 
     elif(GRAPH_CHOICE in (2, 4, 6, 8)):
         if(GRAPH_CHOICE == 2):
@@ -162,11 +168,11 @@ else:
 
         i = 0
         for graph in cluster_graphs:
-            print("\n\nCluster %d." % i)
+            print("\n\nCluster %d:" % i)
             print()
             print("Ties: %d" % graph.number_of_edges())
             if(GRAPH_CHOICE in (2, 4, 6)):
-                directed_triadic_census(graph, file_name+"_cluster_"+str(i))
+                directed_triadic_census(graph, file_name+"_cluster_"+str(i), SAVE_GRAPHS)
             elif(GRAPH_CHOICE == 8):
-                undirected_triadic_census(graph, file_name+"_cluster_"+str(i))
+                undirected_triadic_census(graph, file_name+"_cluster_"+str(i), SAVE_GRAPHS)
             i += 1
