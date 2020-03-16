@@ -4,9 +4,11 @@ from itertools import combinations
 import pymongo
 import networkx as nx
 import sys
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
-rcParams.update({'figure.autolayout': True})
+matplotlib.rcParams.update({'figure.autolayout': True})
 
 # https://stackoverflow.com/questions/20190520/listing-triads-in-a-multi-edge-graph
 # http://www.analytictech.com/ucinet/help/hs4335.htm
@@ -65,26 +67,32 @@ def directed_triadic_census(graph, file_name):
     plt.xticks(range(len(labels)), labels, rotation=60)
     plt.savefig("graphs/"+file_name+".png")
 
-def undirected_triadic_census(graph):
+def undirected_triadic_census(graph, file_name):
     print("\nCalculating triadic census...")
-    triadic_census = {}
-    for nodes in combinations(graph.nodes, 3):
-        n_edges = graph.subgraph(nodes).number_of_edges()
-        triadic_census.setdefault(n_edges, []).append(nodes)
+    triadic_census = {"A-B-C":0, "A-B-C,A-C":0}
+    while(len(graph.nodes())>0):
+        a = list(graph.nodes())[0]
+        for b in graph.neighbors(a):
+            for c in graph.neighbors(b):
+                if c in graph.neighbors(a):
+                    triadic_census["A-B-C,A-C"] += 1
+                else:
+                    triadic_census["A-B-C"] += 1
+        graph.remove_node(a)
     print("Done!\n")
-    if(1 in triadic_census):
-        print("A-B,C triads: %d" % len(triadic_census[1]))
-    else:
-        print("A-B,C triads: %d" % 0)
-    if(2 in triadic_census):
-        print("A-B-C triads: %d" % len(triadic_census[2]))
-    else:
-        print("A-B-C triads: %d" % 0)
-    if(3 in triadic_census):
-        print("A-B-C,A-C triads: %d" % len(triadic_census[3]))
-    else:
-        print("A-B-C,A-C triads: %d" % 0)
-    return triadic_census
+
+    values = []
+    labels = []
+    print("A-B-C triads: %d" % triadic_census["A-B-C"])
+    values.append(triadic_census["A-B-C"])
+    labels.append("A-B-C")
+    print("A-B-C,A-C triads: %d" % triadic_census["A-B-C,A-C"])
+    values.append(triadic_census["A-B-C,A-C"])
+    labels.append("A-B-C,A-C")
+
+    plt.bar(range(len(values)), values, align='center', alpha=0.5)
+    plt.xticks(range(len(labels)), labels, rotation=60)
+    plt.savefig("graphs/"+file_name+".png")
 
 if(len(sys.argv) - 1 < 1):
     print("Please run this program with arguments: network_analytics.py <Network_Type>")
@@ -113,14 +121,17 @@ else:
             print("Network analytics for general mention graph.")
             print("-------------------------------------------\n")
             graph = networker.general_mention_graph(collection)
+            file_name = "general_mention_graph"
         elif(GRAPH_CHOICE == 5):
             print("Network analytics for general retweet graph.")
             print("-------------------------------------------\n")
             graph = networker.general_retweet_graph(collection)
+            file_name = "general_retweet_graph"
         elif(GRAPH_CHOICE == 7):
             print("Network analytics for general hashtag graph.")
             print("-------------------------------------------\n")
             graph = networker.general_hashtag_graph(collection)
+            file_name = "general_hashtag_graph"
 
         print()
         print("Ties: %d" % graph.number_of_edges())
@@ -128,25 +139,29 @@ else:
         if(GRAPH_CHOICE in (1, 3, 5)):
             directed_triadic_census(graph, file_name)
         elif(GRAPH_CHOICE == 7):
-            undirected_triadic_census(graph)
+            undirected_triadic_census(graph, file_name)
 
     elif(GRAPH_CHOICE in (2, 4, 6, 8)):
         if(GRAPH_CHOICE == 2):
             print("Network analytics for cluster reply graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_reply_graphs(collection)
+            file_name = "cluster_reply_graph"
         elif(GRAPH_CHOICE == 4):
             print("Network analytics for cluster mention graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_mention_graphs(collection)
+            file_name = "cluster_mention_graph"
         elif(GRAPH_CHOICE == 6):
             print("Network analytics for cluster retweet graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_retweet_graphs(collection)
+            file_name = "cluster_retweet_graph"
         elif(GRAPH_CHOICE == 8):
             print("Network analytics for cluster hashtag graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_hashtag_graphs(collection)
+            file_name = "cluster_hashtag_graph"
 
         i = 0
         for graph in cluster_graphs:
