@@ -13,6 +13,8 @@ cluster_hashtags = {}
 cluster_replied_users = {}
 cluster_mentioned_users = {}
 cluster_retweeted_users = {}
+cluster_keywords = {}
+excluded_keywords = ("RT")
 
 for tweet in tweets:
     if(tweet["cluster"] not in clusters):
@@ -22,6 +24,7 @@ for tweet in tweets:
         cluster_replied_users[tweet["cluster"]] = {}
         cluster_mentioned_users[tweet["cluster"]] = {}
         cluster_retweeted_users[tweet["cluster"]] = {}
+        cluster_keywords[tweet["cluster"]] = {}
 
     if(tweet["user"] in cluster_users[tweet["cluster"]]):
         cluster_users[tweet["cluster"]][tweet["user"]] += 1
@@ -54,37 +57,45 @@ for tweet in tweets:
         else:
             cluster_retweeted_users[tweet["cluster"]][tweet["retweeted_user"]] = 1
 
+    for word in tweet["text"].split():
+        if(word not in excluded_keywords and not word.startswith("#") and not word.startswith("@")):
+            if(word in cluster_keywords[tweet["cluster"]]):
+                cluster_keywords[tweet["cluster"]][word] += 1
+            else:
+                cluster_keywords[tweet["cluster"]][word] = 1
+
+
 # Print popular users and hashtags
 for cluster in sorted(clusters):
     print("\n\nStatistics for cluster %d." % cluster)
     print("-------------------------------------------")
 
-    power_users = cluster_users[cluster]
-    sorted_users = sorted(power_users.items(), key=lambda item: item[1], reverse=True)
+    sorted_users = sorted(cluster_users[cluster].items(), key=lambda item: item[1], reverse=True)
     print("\n5 most active users for cluster %d:" % (cluster))
     for user in list(sorted_users)[:5]:
         print("%s with %d tweets." % (user[0], user[1]))
 
-    power_hashtags = cluster_hashtags[cluster]
-    sorted_hashtags = sorted(power_hashtags.items(), key=lambda item: item[1], reverse=True)
+    sorted_hashtags = sorted(cluster_hashtags[cluster].items(), key=lambda item: item[1], reverse=True)
     print("\n5 most popular hashtags for cluster %d:" % (cluster))
     for hashtag in list(sorted_hashtags)[:5]:
         print("#%s with %d tweets." % (hashtag[0], hashtag[1]))
 
-    power_replied = cluster_replied_users[cluster]
-    sorted_replied = sorted(power_replied.items(), key=lambda item: item[1], reverse=True)
+    sorted_replied = sorted(cluster_replied_users[cluster].items(), key=lambda item: item[1], reverse=True)
     print("\n5 most replied to users for cluster %d:" % (cluster))
     for user in list(sorted_replied)[:5]:
         print("%s with %d replies." % (user[0], user[1]))
 
-    power_mentioned = cluster_mentioned_users[cluster]
-    sorted_mentioned = sorted(power_mentioned.items(), key=lambda item: item[1], reverse=True)
+    sorted_mentioned = sorted(cluster_mentioned_users[cluster].items(), key=lambda item: item[1], reverse=True)
     print("\n5 most mentioned users for cluster %d:" % (cluster))
     for user in list(sorted_mentioned)[:5]:
         print("%s with %d mentions." % (user[0], user[1]))
 
-    power_retweeted = cluster_retweeted_users[cluster]
-    sorted_retweeted = sorted(power_retweeted.items(), key=lambda item: item[1], reverse=True)
+    sorted_retweeted = sorted(cluster_retweeted_users[cluster].items(), key=lambda item: item[1], reverse=True)
     print("\n5 most retweeted users for cluster %d:" % (cluster))
     for user in list(sorted_retweeted)[:5]:
         print("%s with %d retweets." % (user[0], user[1]))
+
+    sorted_keywords = sorted(cluster_keywords[cluster].items(), key=lambda item: item[1], reverse=True)
+    print("\n5 most common keywords for cluster %d:" % (cluster))
+    for word in list(sorted_keywords)[:5]:
+        print("'%s' appearing in %d tweets." % (word[0], word[1]))
