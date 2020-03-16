@@ -63,6 +63,7 @@ def directed_triadic_census(graph, file_name):
     values.append(triadic_census["300"])
     labels.append("A<->B<->C,A<->C")
 
+    plt.figure()
     plt.bar(range(len(values)), values, align='center', alpha=0.5)
     plt.xticks(range(len(labels)), labels, rotation=60)
     plt.savefig("graphs/"+file_name+".png")
@@ -90,6 +91,7 @@ def undirected_triadic_census(graph, file_name):
     values.append(triadic_census["A-B-C,A-C"])
     labels.append("A-B-C,A-C")
 
+    plt.figure()
     plt.bar(range(len(values)), values, align='center', alpha=0.5)
     plt.xticks(range(len(labels)), labels, rotation=60)
     plt.savefig("graphs/"+file_name+".png")
@@ -116,22 +118,22 @@ else:
             print("Network analytics for general reply graph.")
             print("-------------------------------------------\n")
             graph = networker.general_reply_graph(collection)
-            file_name = "general_reply_graph"
+            file_name = "replies/general/general_reply_graph"
         elif(GRAPH_CHOICE == 3):
             print("Network analytics for general mention graph.")
             print("-------------------------------------------\n")
             graph = networker.general_mention_graph(collection)
-            file_name = "general_mention_graph"
+            file_name = "mentions/general/general_mention_graph"
         elif(GRAPH_CHOICE == 5):
             print("Network analytics for general retweet graph.")
             print("-------------------------------------------\n")
             graph = networker.general_retweet_graph(collection)
-            file_name = "general_retweet_graph"
+            file_name = "retweets/general/general_retweet_graph"
         elif(GRAPH_CHOICE == 7):
             print("Network analytics for general hashtag graph.")
             print("-------------------------------------------\n")
             graph = networker.general_hashtag_graph(collection)
-            file_name = "general_hashtag_graph"
+            file_name = "hashtags/general/general_hashtag_graph"
 
         print()
         print("Ties: %d" % graph.number_of_edges())
@@ -146,22 +148,22 @@ else:
             print("Network analytics for cluster reply graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_reply_graphs(collection)
-            file_name = "cluster_reply_graph"
+            file_name = "replies/clusters/cluster_reply_graph"
         elif(GRAPH_CHOICE == 4):
             print("Network analytics for cluster mention graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_mention_graphs(collection)
-            file_name = "cluster_mention_graph"
+            file_name = "mentions/clusters/cluster_mention_graph"
         elif(GRAPH_CHOICE == 6):
             print("Network analytics for cluster retweet graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_retweet_graphs(collection)
-            file_name = "cluster_retweet_graph"
+            file_name = "retweets/clusters/cluster_retweet_graph"
         elif(GRAPH_CHOICE == 8):
             print("Network analytics for cluster hashtag graphs.")
             print("-------------------------------------------\n")
             cluster_graphs = networker.cluster_hashtag_graphs(collection)
-            file_name = "cluster_hashtag_graph"
+            file_name = "hashtags/clusters/cluster_hashtag_graph"
 
         i = 0
         for graph in cluster_graphs:
@@ -169,7 +171,7 @@ else:
             print()
             print("Ties: %d" % graph.number_of_edges())
             if(GRAPH_CHOICE in (2, 4, 6)):
-                directed_triadic_census(graph)
+                directed_triadic_census(graph, file_name+"_cluster_"+str(i))
             elif(GRAPH_CHOICE == 8):
-                undirected_triadic_census(graph)
+                undirected_triadic_census(graph, file_name+"_cluster_"+str(i))
             i += 1
