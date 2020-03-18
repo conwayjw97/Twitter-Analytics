@@ -93,8 +93,8 @@ def undirected_triadic_census(graph, file_name, save_graphs):
         plt.xticks(range(len(labels)), labels, rotation=60)
         plt.savefig("graphs/"+file_name+".png")
 
-if(len(sys.argv) - 1 < 2):
-    print("Please run this program with arguments: network_analytics.py <Network_Type> <Save_Graphs>")
+if(len(sys.argv) - 1 < 3):
+    print("Please run this program with arguments: network_analytics.py <Network_Type> <Save_Network> <Save_Graphs>")
     print("\n<Network_Type> choices:")
     print("1 - General Reply Interaction Graph")
     print("2 - Cluster Reply Interaction Graphs")
@@ -104,6 +104,9 @@ if(len(sys.argv) - 1 < 2):
     print("6 - Cluster Retweet Interaction Graphs")
     print("7 - General Hashtag Co-occurence Graph")
     print("8 - Cluster Hashtag Co-occurence Graphs")
+    print("\n<Save_Network> choices:")
+    print("0 - Don't save networks")
+    print("1 - Save networks as .pdf files in /graphs (WARNING: VERY TIME CONSUMING)")
     print("\n<Save_Graphs> choices:")
     print("0 - Don't save graphs")
     print("1 - Save graphs as .png files in /graphs")
@@ -112,28 +115,29 @@ else:
     db = client["WebScienceAssessment"]
     collection = db["tweets"]
     GRAPH_CHOICE = int(sys.argv[1])
-    SAVE_GRAPHS = int(sys.argv[2])
+    SAVE_NETWORKS = int(sys.argv[2])
+    SAVE_GRAPHS = int(sys.argv[3])
 
     if(GRAPH_CHOICE in (1, 3, 5, 7)):
         if(GRAPH_CHOICE == 1):
             print("Network analytics for general reply graph.")
             print("-------------------------------------------\n")
-            graph = networking.general_reply_graph(collection)
+            graph = networking.general_reply_graph(collection, SAVE_NETWORKS)
             file_name = "replies/general/general_reply_graph"
         elif(GRAPH_CHOICE == 3):
             print("Network analytics for general mention graph.")
             print("-------------------------------------------\n")
-            graph = networking.general_mention_graph(collection)
+            graph = networking.general_mention_graph(collection, SAVE_NETWORKS)
             file_name = "mentions/general/general_mention_graph"
         elif(GRAPH_CHOICE == 5):
             print("Network analytics for general retweet graph.")
             print("-------------------------------------------\n")
-            graph = networking.general_retweet_graph(collection)
+            graph = networking.general_retweet_graph(collection, SAVE_NETWORKS)
             file_name = "retweets/general/general_retweet_graph"
         elif(GRAPH_CHOICE == 7):
             print("Network analytics for general hashtag graph.")
             print("-------------------------------------------\n")
-            graph = networking.general_hashtag_graph(collection)
+            graph = networking.general_hashtag_graph(collection, SAVE_NETWORKS)
             file_name = "hashtags/general/general_hashtag_graph"
 
         print()
@@ -148,22 +152,22 @@ else:
         if(GRAPH_CHOICE == 2):
             print("Network analytics for cluster reply graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networking.cluster_reply_graphs(collection)
+            cluster_graphs = networking.cluster_reply_graphs(collection, SAVE_NETWORKS)
             file_name = "replies/clusters/cluster_reply_graph"
         elif(GRAPH_CHOICE == 4):
             print("Network analytics for cluster mention graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networking.cluster_mention_graphs(collection)
+            cluster_graphs = networking.cluster_mention_graphs(collection, SAVE_NETWORKS)
             file_name = "mentions/clusters/cluster_mention_graph"
         elif(GRAPH_CHOICE == 6):
             print("Network analytics for cluster retweet graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networking.cluster_retweet_graphs(collection)
+            cluster_graphs = networking.cluster_retweet_graphs(collection, SAVE_NETWORKS)
             file_name = "retweets/clusters/cluster_retweet_graph"
         elif(GRAPH_CHOICE == 8):
             print("Network analytics for cluster hashtag graphs.")
             print("-------------------------------------------\n")
-            cluster_graphs = networking.cluster_hashtag_graphs(collection)
+            cluster_graphs = networking.cluster_hashtag_graphs(collection, SAVE_NETWORKS)
             file_name = "hashtags/clusters/cluster_hashtag_graph"
 
         i = 0

@@ -35,6 +35,7 @@ def clusterise_tweets(collection):
     print("Updating MongoDB tweets with clusterings...\n")
 
     clustering_count = {}
+    i = 1
     for tweet in tweets:
         update_query = {"id":tweet["id"]}
         cluster = model.predict(vectorizer.transform([tweet["text"]]))[0]
@@ -44,6 +45,10 @@ def clusterise_tweets(collection):
             clustering_count[cluster] = 1
         new_cluster = {"$set":{"cluster":int(cluster)}}
         collection.update_one(update_query, new_cluster)
+        if ((i % 100) == 0):
+            print("Clustered %d tweets of %d total tweets." % (i, len(tweets)))
+        i += 1
+    print()
 
     for cluster in sorted(clustering_count.keys()):
         print("New tweets for cluster %d: %d" % (cluster, clustering_count[cluster]))

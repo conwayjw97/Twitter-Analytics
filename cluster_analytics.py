@@ -10,22 +10,34 @@ excluded_keywords = ("rt", "the", "i", "a")
 
 # Extract statistics from each cluster
 clusters = []
+cluster_sizes = {}
 cluster_users = {}
 cluster_hashtags = {}
 cluster_replied_users = {}
 cluster_mentioned_users = {}
 cluster_retweeted_users = {}
 cluster_keywords = {}
+largest_cluster = {"cluster":None, "size":0}
+smallest_cluster = {"cluster":None, "size":100000000}
 
 for tweet in tweets:
     if(tweet["cluster"] not in clusters):
         clusters.append(tweet["cluster"])
+        cluster_sizes[tweet["cluster"]] = 1
         cluster_users[tweet["cluster"]] = {}
         cluster_hashtags[tweet["cluster"]] = {}
         cluster_replied_users[tweet["cluster"]] = {}
         cluster_mentioned_users[tweet["cluster"]] = {}
         cluster_retweeted_users[tweet["cluster"]] = {}
         cluster_keywords[tweet["cluster"]] = {}
+    elif(tweet["cluster"] in clusters):
+        cluster_sizes[tweet["cluster"]] += 1
+        if(cluster_sizes[tweet["cluster"]] > largest_cluster["size"]):
+            largest_cluster["cluster"] = tweet["cluster"]
+            largest_cluster["size"] = cluster_sizes[tweet["cluster"]]
+        if(cluster_sizes[tweet["cluster"]] < smallest_cluster["size"]):
+            smallest_cluster["cluster"] = tweet["cluster"]
+            smallest_cluster["size"] = cluster_sizes[tweet["cluster"]]
 
     if(tweet["user"] in cluster_users[tweet["cluster"]]):
         cluster_users[tweet["cluster"]][tweet["user"]] += 1
@@ -65,7 +77,6 @@ for tweet in tweets:
                 cluster_keywords[tweet["cluster"]][word] += 1
             else:
                 cluster_keywords[tweet["cluster"]][word] = 1
-
 
 # Print statistics for each cluster
 for cluster in sorted(clusters):
@@ -151,7 +162,7 @@ for tweet in tweets:
                 popular_keywords[word] = 1
 
 # Print statistics for all tweets
-print("\n\nStatistics for all %d tweets." % len(tweets))
+print("\n\nStatistics for all tweets.")
 print("-------------------------------------------")
 
 sorted_users = sorted(popular_users.items(), key=lambda item: item[1], reverse=True)
@@ -183,3 +194,12 @@ sorted_keywords = sorted(popular_keywords.items(), key=lambda item: item[1], rev
 print("\n5 most common keywords:")
 for word in list(sorted_keywords)[:5]:
     print("'%s' appearing in %d tweets." % (word[0], word[1]))
+
+# Print cluster statistics
+print("\n\nGeneral statistics.")
+print("-------------------------------------------")
+print("\nTotal tweets: %d" % len(tweets))
+print("Total clusters: %d" % len(clusters))
+print("Average cluster size: %d" % (len(tweets)/len(clusters)))
+print("Largest cluster: %s with %d tweets" % (largest_cluster["cluster"], largest_cluster["size"]))
+print("Smallest cluster: %s with %d tweets" % (smallest_cluster["cluster"], smallest_cluster["size"]))
