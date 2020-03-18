@@ -4,7 +4,7 @@ Undergraduate Year 4 Web Science Project - Twitter crawler for data collection a
 To import the MongoDB collection, open a terminal and run:
 ```mongorestore -d WebScienceAssessment mongodb_dump```
 
-
+## Crawling
 To collect your own tweets run: ```python3 collect_tweets.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets> <Cluster_Only>```
 
 The arguments refer to:
@@ -17,25 +17,40 @@ The arguments refer to:
 
 ```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
 
+## Cluster Statistics
 
 To calculate and output cluster statistics run: ```python3 cluster_analytics.py```
+
+## Network Analysis
 
 To calculate and output network analyses run: ``` python3 network_analytics.py <Network_Type> <Save_Network> <Save_Graphs>```
 
 ```<Network_Type>``` choices:
+
 1 - General Reply Interaction Graph
+
 2 - Cluster Reply Interaction Graphs
+
 3 - General Mention Interaction Graph
+
 4 - Cluster Mention Interaction Graphs
+
 5 - General Retweet Interaction Graph
+
 6 - Cluster Retweet Interaction Graphs
+
 7 - General Hashtag Co-occurence Graph
+
 8 - Cluster Hashtag Co-occurence Graphs
 
 ```<Save_Network>``` choices:
+
 0 - Don't save networks
+
 1 - Save networks as .pdf files in /graphs (WARNING: VERY TIME CONSUMING)
 
 ```<Save_Graphs>``` choices:
+
 0 - Don't save graphs
+
 1 - Save graphs as .png files in /graphs
