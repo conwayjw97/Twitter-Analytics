@@ -1,6 +1,8 @@
 # Twitter-Analytics
 Undergraduate Year 4 Web Science Project - Twitter crawler for data collection and analytics
 
+## MongoDB Setup
+
 To import the MongoDB collection, open a terminal and run:
 ```mongorestore -d WebScienceAssessment mongodb_dump```
 
@@ -54,3 +56,15 @@ To calculate and output network analyses run: ``` python3 network_analytics.py <
 0 - Don't save graphs
 
 1 - Save graphs as .png files in /graphs
+
+## Folders
+
+/db - MongoDB helper scripts
+
+/graphs - Graph and network output folder
+
+/mongodb_dump - Crawled tweets 
+
+/report - PDF report
+
+/utils - Utility functions
