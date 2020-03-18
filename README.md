@@ -11,13 +11,13 @@ To collect your own tweets run: ```python3 collect_tweets.py <No_Power_Users> <S
 
 The arguments refer to:
 
-```<No_Power_Users>```: Number of power users to be used in REST tweet crawling.
+	```<No_Power_Users>```: Number of power users to be used in REST tweet crawling.
 
-```<Stream_Time>```: Amount of time in seconds to perform 1% Stream crawling.
+	```<Stream_Time>```: Amount of time in seconds to perform 1% Stream crawling.
 
-```<Max_REST_Tweets>```: Max number of tweets to try to retrieve for each REST tweet crawling request.
+	```<Max_REST_Tweets>```: Max number of tweets to try to retrieve for each REST tweet crawling request.
 
-```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
+	```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
 
 ### Cluster Statistics
 
@@ -29,33 +29,33 @@ To calculate and output network analyses run: ``` python3 network_analytics.py <
 
 ```<Network_Type>``` choices:
 
-1 - General Reply Interaction Graph
+	1 - General Reply Interaction Graph
 
-2 - Cluster Reply Interaction Graphs
+	2 - Cluster Reply Interaction Graphs
 
-3 - General Mention Interaction Graph
+	3 - General Mention Interaction Graph
 
-4 - Cluster Mention Interaction Graphs
+	4 - Cluster Mention Interaction Graphs
 
-5 - General Retweet Interaction Graph
+	5 - General Retweet Interaction Graph
 
-6 - Cluster Retweet Interaction Graphs
+	6 - Cluster Retweet Interaction Graphs
 
-7 - General Hashtag Co-occurence Graph
+	7 - General Hashtag Co-occurence Graph
 
-8 - Cluster Hashtag Co-occurence Graphs
+	8 - Cluster Hashtag Co-occurence Graphs
 
 ```<Save_Network>``` choices:
 
-0 - Don't save networks
+	0 - Don't save networks
 
-1 - Save networks as .pdf files in /graphs (WARNING: VERY TIME CONSUMING)
+	1 - Save networks as .pdf files in /graphs (WARNING: VERY TIME CONSUMING)
 
 ```<Save_Graphs>``` choices:
 
-0 - Don't save graphs
+	0 - Don't save graphs
 
-1 - Save graphs as .png files in /graphs
+	1 - Save graphs as .png files in /graphs
 
 ### Folders
 
