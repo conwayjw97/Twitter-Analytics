@@ -8,10 +8,10 @@ To collect your own tweets run ```python3 collect_tweets.py <No_Power_Users> <St
 
 The arguments refer to:
 
-```<No_Power_Users>```: Number of power users to be used in REST tweet crawling.
+  ```<No_Power_Users>```: Number of power users to be used in REST tweet crawling.
 
-```<Stream_Time>```: Amount of time in seconds to perform 1% Stream crawling.
+  ```<Stream_Time>```: Amount of time in seconds to perform 1% Stream crawling.
 
-```<Max_REST_Tweets>```: Max number of tweets to try to retrieve for each REST tweet crawling request.
+  ```<Max_REST_Tweets>```: Max number of tweets to try to retrieve for each REST tweet crawling request.
 
-```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
+  ```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
