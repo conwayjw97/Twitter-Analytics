@@ -1,12 +1,12 @@
 # Twitter-Analytics
 Undergraduate Year 4 Web Science Project - Twitter crawler for data collection and analytics
 
-### MongoDB Setup
+#### MongoDB Setup
 
 To import the MongoDB collection, open a terminal and run:
 ```mongorestore -d WebScienceAssessment mongodb_dump```
 
-### Crawling
+#### Crawling
 To collect your own tweets run: ```python3 collect_tweets.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets> <Cluster_Only>```
 
 Runtime arguments refer to:
@@ -19,11 +19,11 @@ Runtime arguments refer to:
 
 ```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
 
-### Cluster Statistics
+#### Cluster Statistics
 
 To calculate and output cluster statistics run: ```python3 cluster_analytics.py```
 
-### Network Analysis
+#### Network Analysis
 
 To calculate and output network analyses run: ``` python3 network_analytics.py <Network_Type> <Save_Network> <Save_Graphs>```
 
@@ -57,7 +57,7 @@ To calculate and output network analyses run: ``` python3 network_analytics.py <
 
 	1 - Save graphs as .png files in /graphs
 
-### Folders
+#### Folders
 
 /db - MongoDB helper scripts
 
