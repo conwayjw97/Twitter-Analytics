@@ -10,55 +10,59 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'figure.autolayout': True})
 
+# Triadic census for a directed graph
 def directed_triadic_census(graph, file_name, save_graphs):
+    # Calculate census
     print("\nCalculating triadic census...")
     triadic_census = nx.triadic_census(graph)
     print("Done!\n")
 
-    # There's probably a much more efficient way of doing this
-    values = []
-    labels = []
+    # Output to console
     print("A<-B->C triads: %d" % triadic_census["021D"])
-    values.append(triadic_census["021D"])
-    labels.append("A<-B->C")
     print("A->B<-C triads: %d" % triadic_census["021U"])
-    # values.append(triadic_census["021U"])
-    # labels.append("A->B<-C")
     print("A->B->C triads: %d" % triadic_census["021C"])
-    values.append(triadic_census["021C"])
-    labels.append("A->B->C")
     print("A<->B<-C triads: %d" % triadic_census["111D"])
-    values.append(triadic_census["111D"])
-    labels.append("A<->B<-C")
     print("A<->B->C triads: %d" % triadic_census["111U"])
-    values.append(triadic_census["111U"])
-    labels.append("A<->B->C")
     print("A->B<-C,A->C triads: %d" % triadic_census["030T"])
-    values.append(triadic_census["030T"])
-    labels.append("A->B<-C,A->C")
     print("A<-B<-C,A->C triads: %d" % triadic_census["030C"])
-    values.append(triadic_census["030C"])
-    labels.append("A<-B<-C,A->C")
     print("A<->B<->C triads: %d" % triadic_census["201"])
-    values.append(triadic_census["201"])
-    labels.append("A<->B<->C")
     print("A<-B->C,A<->C triads: %d" % triadic_census["120D"])
-    values.append(triadic_census["120D"])
-    labels.append("A<-B->C,A<->C")
     print("A->B<-C,A<->C triads: %d" % triadic_census["120U"])
-    values.append(triadic_census["120U"])
-    labels.append("A->B<-C,A<->C")
     print("A->B->C,A<->C triads: %d" % triadic_census["120C"])
-    values.append(triadic_census["120C"])
-    labels.append("A->B->C,A<->C")
     print("A->B<->C,A<->C triads: %d" % triadic_census["210"])
-    values.append(triadic_census["210"])
-    labels.append("A->B<->C,A<->C")
     print("A<->B<->C,A<->C triads: %d" % triadic_census["300"])
-    values.append(triadic_census["300"])
-    labels.append("A<->B<->C,A<->C")
 
+    # Output to graph
     if(save_graphs == 1):
+        values = []
+        labels = []
+        values.append(triadic_census["021D"])
+        labels.append("A<-B->C")
+        values.append(triadic_census["021U"])
+        labels.append("A->B<-C")
+        values.append(triadic_census["021C"])
+        labels.append("A->B->C")
+        values.append(triadic_census["111D"])
+        labels.append("A<->B<-C")
+        values.append(triadic_census["111U"])
+        labels.append("A<->B->C")
+        values.append(triadic_census["030T"])
+        labels.append("A->B<-C,A->C")
+        values.append(triadic_census["030C"])
+        labels.append("A<-B<-C,A->C")
+        values.append(triadic_census["201"])
+        labels.append("A<->B<->C")
+        values.append(triadic_census["120D"])
+        labels.append("A<-B->C,A<->C")
+        values.append(triadic_census["120U"])
+        labels.append("A->B<-C,A<->C")
+        values.append(triadic_census["120C"])
+        labels.append("A->B->C,A<->C")
+        values.append(triadic_census["210"])
+        labels.append("A->B<->C,A<->C")
+        values.append(triadic_census["300"])
+        labels.append("A<->B<->C,A<->C")
+
         plt.figure()
         plt.bar(range(len(values)), values, align='center', alpha=0.5)
         plt.xticks(range(len(labels)), labels, rotation=60)
@@ -78,16 +82,19 @@ def undirected_triadic_census(graph, file_name, save_graphs):
         graph.remove_node(a)
     print("Done!\n")
 
-    values = []
-    labels = []
+    # Output to console
     print("A-B-C triads: %d" % triadic_census["A-B-C"])
-    values.append(triadic_census["A-B-C"])
-    labels.append("A-B-C")
     print("A-B-C,A-C triads: %d" % triadic_census["A-B-C,A-C"])
-    values.append(triadic_census["A-B-C,A-C"])
-    labels.append("A-B-C,A-C")
 
+    # Output to graph
     if(save_graphs == 1):
+        values = []
+        labels = []
+        values.append(triadic_census["A-B-C"])
+        labels.append("A-B-C")
+        values.append(triadic_census["A-B-C,A-C"])
+        labels.append("A-B-C,A-C")
+
         plt.figure()
         plt.bar(range(len(values)), values, align='center', alpha=0.5)
         plt.xticks(range(len(labels)), labels, rotation=60)

@@ -4,6 +4,7 @@ import pymongo
 from utils import clustering, crawling
 
 def find_power_users(tweets, no_users):
+    # Find most active users in tweets
     power_users = {}
     for tweet in tweets:
         tweet = tweet["data"]
@@ -12,7 +13,10 @@ def find_power_users(tweets, no_users):
         else:
             power_users[tweet["user"]] = 1
 
+    # Sort by most active
     sorted_power_users = sorted(power_users, key=power_users.get, reverse=True)
+
+    # Output to console
     print("\n%d users with the most tweets:" % no_users)
     for i in range(no_users):
         print("%s with %d tweets." % (sorted_power_users[i], power_users[sorted_power_users[i]]))
