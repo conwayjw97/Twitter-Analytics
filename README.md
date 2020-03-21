@@ -1,16 +1,16 @@
 # Twitter-Analytics
 Undergraduate Year 4 Web Science Project - Twitter crawler for data collection and analytics
 
-## Run with Collected Tweets
+## Run with collected Tweets and clusterings
 
 #### Setup MongoDB
 
-To import the MongoDB collection, open a terminal and run:
+All the tweets and their respective clustering present in report are packaged into the provided MongoDB collection. To load this onto your own MongoDB, open a terminal and run:
 ```mongorestore -d WebScienceAssessment mongodb_dump```
 
-## Collect your own Tweets 
+## Collect and cluster your own Tweets 
 
-#### Setup Keys
+#### Setup keys
 To set up the necessary API keys, go to utils/crawling.py, then insert your API keys in the appropriate variables present from line 7 onwards:
 ```
 consumer_key = ""
@@ -36,11 +36,11 @@ Runtime arguments refer to:
 
 #### Cluster Statistics
 
-To calculate and output cluster statistics run: ```python3 cluster_analytics.py```
+To calculate and see cluster statistics run: ```python3 cluster_analytics.py```
 
 #### Network Analysis
 
-To calculate and output network analyses run: ``` python3 network_analytics.py <Network_Type> <Save_Network> <Save_Graphs>```
+To calculate and output network analyses, run: ``` python3 network_analytics.py <Network_Type> <Save_Network> <Save_Graphs>```
 
 ```<Network_Type>``` choices:
 
