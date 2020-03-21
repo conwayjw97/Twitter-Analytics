@@ -71,6 +71,14 @@ To calculate and output network analyses, run: ``` python3 network_analytics.py 
 	0 - Don't save graphs
 
 	1 - Save graphs as .png files in /graphs
+	
+#### Save output to file
+
+There will probably be a large number of clusters that both analysis scripts will return results for. If you'd like to save these statistics to a text file for easier reading or searching, simply append ``` > Output.txt``` to the end of the run command.
+
+```python3 cluster_analytics.py > Output.txt```
+
+``` python3 network_analytics.py <Network_Type> <Save_Network> <Save_Graphs> > Output.txt```
 
 ## Folders
 
