@@ -1,13 +1,26 @@
 # Twitter-Analytics
 Undergraduate Year 4 Web Science Project - Twitter crawler for data collection and analytics
 
-#### MongoDB Setup
+## Run with Collected Tweets
+
+#### Setup MongoDB
 
 To import the MongoDB collection, open a terminal and run:
 ```mongorestore -d WebScienceAssessment mongodb_dump```
 
+## Collect your own Tweets 
+
+#### Setup Keys
+To set up the necessary API keys, go to utils/crawling.py, then insert your API keys in the appropriate variables present from line 7 onwards:
+```
+consumer_key = ""
+consumer_secret = ""
+access_token = ""
+access_token_secret = ""
+```
+
 #### Crawling
-To collect your own tweets run: ```python3 collect_tweets.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets> <Cluster_Only>```
+After the keys have been added, you can collect your own by executing: ```python3 collect_tweets.py <No_Power_Users> <Stream_Time> <Max_REST_Tweets> <Cluster_Only>```
 
 Runtime arguments refer to:
 
@@ -18,6 +31,8 @@ Runtime arguments refer to:
 ```<Max_REST_Tweets>```: Max number of tweets to try to retrieve for each REST tweet crawling request.
 
 ```<Cluster_Only>```: If 1, only clusterise saved tweets instead of crawling.
+
+## See Tweet Statistics
 
 #### Cluster Statistics
 
@@ -57,7 +72,7 @@ To calculate and output network analyses run: ``` python3 network_analytics.py <
 
 	1 - Save graphs as .png files in /graphs
 
-#### Folders
+## Folders
 
 /db - MongoDB helper scripts
 
