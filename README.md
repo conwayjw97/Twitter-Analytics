@@ -1,6 +1,12 @@
 # Twitter-Analytics
 Undergraduate Year 4 Web Science Project - Twitter crawler for data collection and analytics
 
+## Install dependencies
+
+```
+pip3 install pymongo tweepy sklearn networkx matplotlib
+```
+
 ## Run with collected Tweets and clusterings
 
 #### Setup MongoDB
