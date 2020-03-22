@@ -3,6 +3,7 @@ Undergraduate Year 4 Web Science Project - Twitter crawler for data collection a
 
 ## Install dependencies
 
+Open a terminal and run:
 ```
 pip3 install pymongo tweepy sklearn networkx matplotlib
 ```
